@@ -1,0 +1,17 @@
+{application, ej,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  sasl,
+                  lager,
+                  mnesia,
+                  crypto,
+                  p1_xml
+                 ]},
+  {mod, { ej_app, []}},
+  {env, []}
+ ]}.
