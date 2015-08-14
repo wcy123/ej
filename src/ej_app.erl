@@ -34,7 +34,8 @@ ej_load_nif() ->
     NotLoaded = not(not(Where == undefined)),
     error_logger:info_report({Where,NotLoaded, Where == undefined}),
     if NotLoaded ->
-            {ok, Pid} = proc_lib:start(?MODULE, ej_load_nif_proc, []);
+            {ok, _Pid} = proc_lib:start(?MODULE, ej_load_nif_proc, []),
+            ok;
        true -> ok
     end.
 

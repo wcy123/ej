@@ -34,13 +34,13 @@ new(Vars)            ->
     %% temporary process aborts, ej_port_gc will be notified.
     true = erlang:port_connect(Port, whereis(ej_port_gc)),
     true = erlang:is_port(Port), %% crash as early as possible.
-    ez_vars:add_module(?MODULE,
+    ej_vars:add_module(?MODULE,
                        #{
                           port => Port,
                           stack => [],
                           size => 0,
                           maxsize => infinity
-                        }).
+                        }, Vars).
 ul({data, Data}, Vars) ->
     %% adapter to original code.
     et:trace_me(?DETAIL_LEVEL, ?MODULE, expal, parse , [{data, Data}]),
@@ -89,7 +89,7 @@ terminate(_Args, _Vars) ->
                          {xml_stream_error, binary()}.
 %% it is wrong, it is not `xml_stream_el`
 -type stack() :: [xml_stream_el() | xmlel()].
--type xml_stream_state() :: #xml_stream_state{}.
+
 
 element_to_binary(xml_1_0) ->
     << "<?xml version='1.0'?>" >>;
