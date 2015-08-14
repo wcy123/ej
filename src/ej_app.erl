@@ -34,13 +34,13 @@ ej_load_nif() ->
     NotLoaded = not(not(Where == undefined)),
     error_logger:info_report({Where,NotLoaded, Where == undefined}),
     if NotLoaded ->
-            {ok, Pid} = proc_lib:start(?MODULE, ej_load_nif_proc, []),
-            true = register(ej_load_nif,Pid),
-            ok;
+            {ok, Pid} = proc_lib:start(?MODULE, ej_load_nif_proc, []);
        true -> ok
     end.
 
+-spec ej_load_nif_proc() -> no_return().
 ej_load_nif_proc() ->
+    true = register(ej_load_nif,self()),
     stringprep:load_nif(),
     p1_yaml:load_nif(),
     p1_sha:load_nif(),

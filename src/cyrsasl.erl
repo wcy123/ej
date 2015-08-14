@@ -25,7 +25,7 @@
 
 -module(cyrsasl).
 
--behaviour(ejabberd_config).
+%% -behaviour(ejabberd_config).
 
 -author('alexey@process-one.net').
 

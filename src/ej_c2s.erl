@@ -9,8 +9,9 @@
          dl/2,
          dl/3
         ]).
+-spec new() -> ej_vars:ej_vars().
 new() ->
-    Vars = #{
+    InitVars = #{
       ej_c2s_state => #{
         name => ej_c2s_state,
         detail_level => 10,
@@ -32,7 +33,7 @@ new() ->
       top => ej_c2s_state,
       bottom => ej_tcp_stub
      },
-    ej_vars:new({ej_c2s_state,ej_xml_stream,ej_tcp_stub},Vars).
+    ej_vars:new([ej_c2s_state,ej_xml_stream,ej_tcp_stub], InitVars).
 
 dl(Args, Vars) ->
     Module = maps:get(top, Vars),
@@ -40,7 +41,7 @@ dl(Args, Vars) ->
     et:trace_me(DetailLevel, top, Module,
                 erlang:element(1,Args), [{args, Args}]),
     %% die as early as possible, perserve stack info
-    ej_vars:return(Module:dl(Args, Vars)).
+    Module:dl(Args, Vars).
 
 
 dl(Args, UpperModule, Vars) ->
@@ -48,7 +49,7 @@ dl(Args, UpperModule, Vars) ->
     DetailLevel = get_detail_level(LowerModule,UpperModule,Vars),
     et:trace_me(DetailLevel,UpperModule, LowerModule,
                 erlang:element(1,Args), [{args, Args}]),
-    ej_vars:return(LowerModule:dl(Args, Vars)).
+    LowerModule:dl(Args, Vars).
 
 
 ul(Args, Vars) ->
@@ -56,16 +57,14 @@ ul(Args, Vars) ->
     DetailLevel = ej_vars:get(detail_level, Module ,Vars),
     et:trace_me(DetailLevel,bottom, Module,
                 erlang:element(1,Args), [{args, Args}]),
-    %% die as early as possible
-    ej_vars:return(Module:ul(Args, Vars)).
+    Module:ul(Args, Vars).
 
 ul(Args, LowerModule, Vars) ->
     UpperModule = ej_vars:get(ul_entity, LowerModule,Vars),
     DetailLevel = get_detail_level(LowerModule,UpperModule,Vars),
     et:trace_me(DetailLevel,LowerModule, UpperModule,
                 erlang:element(1,Args), [{args, Args}]),
-    %% die as early as possible
-    ej_vars:return(UpperModule:ul(Args,Vars)).
+    UpperModule:ul(Args,Vars).
 
 
 get_detail_level(M1,M2,Vars) ->

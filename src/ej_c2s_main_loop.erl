@@ -33,8 +33,6 @@
 -spec get_pid() -> {ok, pid()}.
 get_pid() ->
     gen_server:call(?SERVER, get_pid).
-tt() ->
-    #state{}.
 
 %%--------------------------------------------------------------------
 %% @doc

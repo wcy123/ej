@@ -3,9 +3,15 @@
          maybe_start_link/4,
          %% start_app_with_dependency/1,
          getenv/1,
-         getenv/2
+         getenv/2,
+         getenv/3
          %% app_start_sequence/1, get_so_path/1
         ]).
+
+%% private export
+-export([
+         maybe_start_link_entry/4
+         ]).
 %% start_app_with_dependency(App) ->
 %%     lists:foreach(
 %%       fun(A) -> ok = application:ensure_started(A) end,
@@ -44,8 +50,11 @@ getenv(Env, Default, Separator) ->
 maybe_start_link(Name,M,F,A)  ->
     case whereis(Name) of
         undefined ->
-            {ok, Pid} = proc_lib:start(M,F,A),
-            true = register(Name, Pid),
+            {ok, Pid} = proc_lib:start(?MODULE,maybe_start_link_entry,[Name,M,F,A]),
             {ok, Pid};
         Pid -> {ok , Pid}
     end.
+maybe_start_link_entry(Name, M,F,A) ->
+    true = register(Name, self()),
+    proc_lib:init_ack({ok,self()}),
+    apply(M,F,A).

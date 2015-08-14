@@ -15,26 +15,42 @@
 %% callbacks for upper layer
 %% ej_c2s_main_loop callbacks
 -export([
-         init/0,
+         new/1,
          ul/2,
          dl/2,
          terminate/2
         ]).
-init(Vars) ->
+-spec new(Vars :: ej_vars:ej_vars()) -> ej_vars:ej_vars().
+new(Vars) ->
+    %% maybe I need to initialize all the states here.
+    NewVars1 = ej_vars:new(
+                 [
+                  %% all states go here
+                  ej_c2s_state_wait_for_stream
+                 ],
+                 Vars#{
+                   %% initialization of each of the states
+                   ej_c2s_state_wait_for_stream => #{
+                     ul_entity => undefined,
+                     dl_entity => ?MODULE
+                    }
+                  }),
+    ej_vars:add_module(?MODULE,
+                       #{
+                          %% the initial state
+                          ul_entity => ej_c2s_state_wait_for_stream
+                        },
+                       NewVars1).
 
 ul(Args, Vars) ->
     io:format("gogo ~p~n",[Args]),
     {ok, Vars}.
 
 dl({next_state, State}, Vars) ->
-    OldState = ej_vars:get(ul_entity,?MODULE,Vars),
-    NewVars0 = ej_vars:delete(OldState, Vars),
-    NewVars1 = ej_vars:ej_vars:new({ej_c2s_state_wait_for_stream}, NewVars)
-    NewModuleVars = OldModuleVars#{
-                      ul_entity := ej_c2s_state_wait_for_stream
-                     },
-    NewVars = ej_vars:set(?MODULE, NewModuleVars, Vars),
-    ej_vars:return().
-    1.
+    %% OldState = ej_vars:get(ul_entity,?MODULE,Vars),
+    %% do I really need to delete the old state to save memory?
+    %% NewVars0 = ej_vars:delete(OldState, Vars),
+    ej_vars:set(ul_entity, State, ?MODULE, Vars).
+
 terminate(_Args, _Var) ->
     1.

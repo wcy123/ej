@@ -20,32 +20,35 @@
 %% callbacks for upper layer
 %% ej_c2s_main_loop callbacks
 -export([
-         init/0,
+         new/1,
          ul/2,
          dl/2,
-         terminate/2
+         terminate/2,
+         element_to_binary/1
         ]).
-init()            ->
+-spec new(Vars :: ej_vars:ej_vars()) -> ej_vars:ej_vars().
+new(Vars)            ->
     Port = open_port({spawn_driver, "expat_erl"}, [binary]),
     %% now the ej_port_gc owns the port, so that when this processs is
     %% ended, the port still survive and keeps open. whenever a
     %% temporary process aborts, ej_port_gc will be notified.
     true = erlang:port_connect(Port, whereis(ej_port_gc)),
     true = erlang:is_port(Port), %% crash as early as possible.
-    #{
-       port => Port,
-       stack => [],
-       size => 0,
-       maxsize => infinity
-     }.
+    ez_vars:add_module(?MODULE,
+                       #{
+                          port => Port,
+                          stack => [],
+                          size => 0,
+                          maxsize => infinity
+                        }).
 ul({data, Data}, Vars) ->
     %% adapter to original code.
     et:trace_me(?DETAIL_LEVEL, ?MODULE, expal, parse , [{data, Data}]),
     {ok, NewVars, Events}  = parse(Data,Vars),
     et:trace_me(?DETAIL_LEVEL, expal, ?MODULE, ok ,
-                [{xml, ?EJ_VARS(NewVars) },
+                [{xml, ej_vars:get(?MODULE,NewVars) },
                  {events, Events}]),
-    ej_vars:return(lists:foldl(fun report_event/2, {ok, Vars}, Events)).
+    lists:foldl(fun report_event/2, {ok, Vars}, Events).
 
 
 report_event(E, {ok, Vars}) ->
@@ -139,10 +142,10 @@ crypt(S) ->
 
 parse(Str,Vars) ->
     StrSize = byte_size(Str),
-    Port = ?EJ_GET_VAR(port,Vars),
-    Stack = ?EJ_GET_VAR(stack,Vars),
-    Size = ?EJ_GET_VAR(size,Vars),
-    MaxSize = ?EJ_GET_VAR(maxsize,Vars),
+    Port = ej_vars:get(port,?MODULE,Vars),
+    Stack = ej_vars:get(stack,?MODULE,Vars),
+    Size = ej_vars:get(size,?MODULE,Vars),
+    MaxSize = ej_vars:get(maxsize,?MODULE,Vars),
     Res = port_control(Port, ?PARSE_COMMAND, Str),
     { NewStack, NewSize, Events } =
         lists:foldl(fun parse_data/2,
@@ -150,8 +153,8 @@ parse(Str,Vars) ->
                     binary_to_term(Res)),
     NewSize > MaxSize andalso
         erlang:error( {xml_stream_error, <<"XML stanza is too big">>} ),
-    Vars0 = ?EJ_SET_VAR(stack, NewStack, Vars),
-    Vars1 = ?EJ_SET_VAR(size, NewSize, Vars0),
+    Vars0 = ej_vars:set(stack, NewStack,?MODULE, Vars),
+    Vars1 = ej_vars:set(size, NewSize, ?MODULE, Vars0),
     {
       ok, Vars1,
       lists:reverse(Events)

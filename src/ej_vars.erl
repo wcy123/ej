@@ -9,48 +9,66 @@
 -author('wcy123@gmail.com').
 -export([
          new/2,
-         delete/2,
+         add_module/3,
          get/2,
          get/3,
          set/3,
-         set/4,
-         return/1
+         set/4
         ]).
+-type ej_module() :: atom().
+-type ej_vars() :: #{ ej_module() => ej_module_vars() }.
+-type ej_module_vars() :: #{ atom() => term() }.
 
-%% @doc Vars is a map. Modules is a tuple of modules, a new map is
-%% initialized with each modules
-
+%% @doc create module variable storage.
+-spec new(Modules :: [ej_module()],
+          Vars :: ej_vars()) -> ej_vars().
 new(Modules, Vars) ->
-    Size = erlang:tuple_size(Modules),
-    for_each_module(Modules, 1, Size, Vars).
+    lists:foldl(fun for_each_module/2, Vars,Modules).
 
+
+-spec add_module(Module :: ej_module(),
+                 ModuleVars :: ej_module_vars(),
+                 Vars:: ej_vars()) ->
+                        ej_vars().
+add_module(Module, ModuleVars, Vars) ->
+    maps:put(Module,ModuleVars, Vars).
+
+-spec get(Module :: ej_module(),
+          Vars:: ej_vars()) ->
+                 ej_module_vars().
 get(Module, Vars) ->
     maps:get(Module, Vars).
 
+
+-spec set(Module :: ej_module(),
+          ModuleVars :: ej_module_vars(),
+          Vars:: ej_vars()) ->
+                 ej_vars().
 set(Module, ModuleVars, Vars) ->
     OldModuleVars = maps:get(Module, Vars, #{}),
     NewModuleVars = maps:merge(OldModuleVars,ModuleVars),
     maps:put(Module,NewModuleVars,Vars).
 
-delete(Module, Vars) ->
-    maps:remove(Module).
-
+-spec get(Key :: atom(),
+          Module :: ej_module(),
+          Vars :: ej_module_vars())
+         -> term().
 get(Key, Module, Vars) ->
     M = maps:get(Module, Vars),
     maps:get(Key, M).
 
+-spec set(Key :: atom(),
+          Value :: term(),
+          Module :: ej_module(),
+          Vars :: ej_module_vars())
+         -> ej_module_vars().
 set(Key, Value, Module, Vars) ->
     M1 = maps:get(Module, Vars),
     M2 = maps:update(Key, Value, M1),
     maps:update(Module, M2, Vars).
 
 %%% internal functions
-
-for_each_module(Modules, Pos, Size, Vars) when Pos =< Size ->
-    M = erlang:element(Pos,Modules),
+for_each_module(M, Vars) ->
     OldV = maps:get(M,Vars,#{}),
     NewVars0 = Vars#{ M => OldV },
-    NewVars1 = M:init(NewVars0),
-    for_each_module(Modules, Pos + 1 , Size, NewVars1).
-for_each_module(_Modules, _Pos, _Size, Vars) ->
-    {ok, Vars}.
+    M:new(NewVars0).
