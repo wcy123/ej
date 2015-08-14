@@ -6,7 +6,7 @@
 .#*
 .edts
 *.dump
-/Makefile
+Makefile
 /config.log
 /config.status
 /configure
