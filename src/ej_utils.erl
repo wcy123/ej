@@ -4,10 +4,12 @@
          %% start_app_with_dependency/1,
          getenv/1,
          getenv/2,
-         getenv/3
+         getenv/3,
          %% app_start_sequence/1, get_so_path/1
+         is_directory/1,
+         code_module_dir/2
         ]).
-
+-include_lib("kernel/include/file.hrl").
 %% private export
 -export([
          maybe_start_link_entry/4
@@ -58,3 +60,26 @@ maybe_start_link_entry(Name, M,F,A) ->
     true = register(Name, self()),
     proc_lib:init_ack({ok,self()}),
     apply(M,F,A).
+
+code_module_dir(Module,SubDir) ->
+    Mod = code:which(Module),
+    EbinDir = filename:dirname(Mod),
+    true = is_directory(EbinDir),
+    AppDir = filename:dirname(EbinDir),
+    true = is_directory(AppDir),
+    Res = filename:join([AppDir | SubDir ]),
+    true = is_directory(Res),
+    Res.
+
+is_directory(D) ->
+    try {ok, #file_info{ type = directory } } =
+             file:read_file_info(D),
+         true
+    catch
+        error:{badmatch,_} ->
+            false
+    end.
+
+
+
+

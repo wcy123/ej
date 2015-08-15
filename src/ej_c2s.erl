@@ -12,11 +12,11 @@
 -spec new() -> ej_vars:ej_vars().
 new() ->
     InitVars = #{
-      ej_c2s_state => #{
-        name => ej_c2s_state,
-        detail_level => 10,
-        ul_entity => undefined,
-        dl_entity => ej_xml_stream
+      ej_tcp_stub => #{
+        detail_level => 30,
+        name => ej_xml_stream,
+        ul_entity => ej_xml_stream,
+        dl_entity => undefined
        },
       ej_xml_stream => #{
         detail_level => 20,
@@ -24,11 +24,11 @@ new() ->
         ul_entity => ej_c2s_state,
         dl_entity => ej_tcp_stub
        },
-      ej_tcp_stub => #{
-        detail_level => 30,
-        name => ej_xml_stream,
-        ul_entity => ej_xml_stream,
-        dl_entity => undefined
+      ej_c2s_state => #{
+        name => ej_c2s_state,
+        detail_level => 10,
+        ul_entity => undefined,
+        dl_entity => ej_xml_stream
        },
       top => ej_c2s_state,
       bottom => ej_tcp_stub

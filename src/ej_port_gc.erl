@@ -10,7 +10,6 @@ start_link() ->
 -spec main() -> no_return().
 main()->
     process_flag(trap_exit,true),
-    true = erlang:register(?MODULE, self()),
     proc_lib:init_ack({ok,self()}),
     ?MODULE:loop().
 

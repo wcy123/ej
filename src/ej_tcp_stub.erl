@@ -15,13 +15,16 @@
 %% callbacks for upper layer
 %% ej_c2s_main_loop callbacks
 -export([
-         init/0,
+         new/1,
          ul/2,
          dl/2,
          terminate/2
         ]).
-init() ->
-    #{}.
+new(Vars) ->
+    ej_vars:add_module(?MODULE,
+                       #{
+                        },
+                       Vars).
 ul({tcp, _Socket, Data}, Vars) ->
     ej_c2s_vars:ul({data, Data}, ?MODULE, Vars).
 dl(_Args, Vars) ->

@@ -8,13 +8,14 @@
 
 
 %% internal exports
--export([ej_load_nif_proc/0]).
+-export([load_nif/0, load_nif_proc/0]).
+-define(EJ_LOAD_NIF_PROC_NAME, ej_app_load_nif).
 %% ===================================================================
 %% Application callbacks
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    ej_load_nif(),
+    load_nif(),
     %% misleading name, no process started, just initialization
     %% database.
     translate:start(),
@@ -29,22 +30,24 @@ start(_StartType, _StartArgs) ->
 stop(_State) ->
     ok.
 
-ej_load_nif() ->
-    Where = erlang:whereis(ej_load_nif),
+load_nif() ->
+    Where = erlang:whereis(?EJ_LOAD_NIF_PROC_NAME),
     NotLoaded = not(not(Where == undefined)),
     error_logger:info_report({Where,NotLoaded, Where == undefined}),
     if NotLoaded ->
-            {ok, _Pid} = proc_lib:start(?MODULE, ej_load_nif_proc, []),
+            {ok, _Pid} = proc_lib:start(?MODULE, load_nif_proc, []),
             ok;
        true -> ok
     end.
 
--spec ej_load_nif_proc() -> no_return().
-ej_load_nif_proc() ->
-    true = register(ej_load_nif,self()),
+-spec load_nif_proc() -> no_return().
+load_nif_proc() ->
+    true = register(?EJ_LOAD_NIF_PROC_NAME,self()),
     stringprep:load_nif(),
     p1_yaml:load_nif(),
     p1_sha:load_nif(),
+    OsPath = ej_utils:code_module_dir(xml_stream,["priv", "lib"]),
+    ok = erl_ddll:load_driver(OsPath, expat_erl),
     proc_lib:init_ack({ok,self()}),
     receive after infinity -> 1 end.
 

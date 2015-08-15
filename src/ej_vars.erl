@@ -31,7 +31,10 @@ new(Modules, Vars) ->
                  Vars:: ej_vars()) ->
                         ej_vars().
 add_module(Module, ModuleVars, Vars) ->
-    maps:put(Module,ModuleVars, Vars).
+    OldModuleVars1 = maps:get(Module, Vars, #{}),
+    OldModuleVars2 = maps:merge(#{name => Module}, OldModuleVars1),
+    NewModuleVars = maps:merge(OldModuleVars2,ModuleVars),
+    maps:put(Module,NewModuleVars, Vars).
 
 -spec get(Module :: ej_module(),
           Vars:: ej_vars()) ->

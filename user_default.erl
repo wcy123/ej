@@ -1,5 +1,5 @@
 -module(user_default).
--compile({export_all}).
+-compile([export_all]).
 -include("./include/ejabberd_config.hrl").
 -include("./include/ejabberd.hrl").
 say () ->
@@ -48,6 +48,8 @@ p(Pid) ->
     end.
 tpl(Module) ->
     dbg:tpl(Module,[{'$1',[],[{return_trace}]}]).
+tpl(Module,Fun) ->
+    dbg:tpl(Module,Fun,[{'$1',[],[{return_trace}]}]).
 
 %% CatchAll = [{'_',[],['$_']}].
 %% mnesia:dirty_select(TableName, CatchAll).

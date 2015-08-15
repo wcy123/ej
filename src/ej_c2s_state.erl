@@ -7,7 +7,7 @@
 %%% Created :  4 Aug 2015 by chunywan <wcy123@gmail.com>
 %%%-------------------------------------------------------------------
 -module(ej_c2s_state).
--include("ej_vars.hrl").
+
 
 
 %% API
@@ -32,6 +32,7 @@ new(Vars) ->
                    %% initialization of each of the states
                    ej_c2s_state_wait_for_stream => #{
                      ul_entity => undefined,
+                     detail_level => 9,
                      dl_entity => ?MODULE
                     }
                   }),
