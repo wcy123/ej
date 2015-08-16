@@ -7,14 +7,6 @@
 %%% Created :  4 Aug 2015 by chunywan <wcy123@gmail.com>
 %%%-------------------------------------------------------------------
 -module(ej_xml_stream).
--include("ej_vars.hrl").
--record(xml_stream_state,
-	{
-          port                  :: port(),
-          stack = []            :: stack(),
-          size = 0              :: non_neg_integer(),
-          maxsize = infinity    :: non_neg_integer() | infinity
-        }).
 -define(DETAIL_LEVEL,99).
 %% API
 %% callbacks for upper layer
@@ -48,11 +40,11 @@ ul({data, Data}, Vars) ->
     et:trace_me(?DETAIL_LEVEL, expal, ?MODULE, ok ,
                 [{xml, ej_vars:get(?MODULE,NewVars) },
                  {events, Events}]),
-    lists:foldl(fun report_event/2, {ok, Vars}, Events).
+    lists:foldl(fun report_event/2, Vars, Events).
 
 
-report_event(E, {ok, Vars}) ->
-    ej_c2s_vars:ul(E, ?MODULE, Vars).
+report_event(E, Vars) when is_map(Vars) ->
+    ej_c2s:ul(E, ?MODULE, Vars).
 
 dl(_Args, _Vars) ->
     1.
@@ -87,10 +79,6 @@ terminate(_Args, _Vars) ->
                          {xml_stream_end, binary()} |
                          {xml_stream_start, binary(), [attr()]} |
                          {xml_stream_error, binary()}.
-%% it is wrong, it is not `xml_stream_el`
--type stack() :: [xml_stream_el() | xmlel()].
-
-
 element_to_binary(xml_1_0) ->
     << "<?xml version='1.0'?>" >>;
 element_to_binary({xml_stream_start, Name, Attrs}) ->

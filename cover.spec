@@ -2,8 +2,8 @@
 %%{level, detailsl}.
 {incl_app, details}.
 {incl_mods, [ej_vars]}.
-{export, "export_file"}.
-{import, ["input_file"]}.
+%%{export, "export_file"}.
+%%{import, ["input_file"]}.
 %%{level, details}.
 %%{incl_dirs, ej, ["ebin"]}.
 %% Local Variables:

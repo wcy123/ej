@@ -26,7 +26,7 @@ new(Vars) ->
                         },
                        Vars).
 ul({tcp, _Socket, Data}, Vars) ->
-    ej_c2s_vars:ul({data, Data}, ?MODULE, Vars).
+    ej_c2s:ul({data, Data}, ?MODULE, Vars).
 dl(_Args, Vars) ->
     Vars.
 
