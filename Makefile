@@ -11,3 +11,7 @@ compile:
 	rebar compile skip_deps=true
 dialyzer:
 	dialyzer --fullpath  --plt $(DEPSOLVER_PLT) -pa deps/p1_xml/ebin -pa deps/lager/ebin -Wrace_conditions --src src
+
+
+test:
+	ct_run -cover cover.spec -cover_stop false -no_auto_compile -verbosity 9 -pa ebin -logdir /usr/share/nginx/www/log -dir tests

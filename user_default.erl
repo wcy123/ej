@@ -10,7 +10,6 @@ reload_me() ->
 
 setup_env() ->
     os:putenv("EJABBERD_CONFIG_PATH","ejabberd.yml"),
-    code:add_patha("deps/ehyperloglog/ebin"),
     code:add_patha("deps/esip/ebin"),
     code:add_patha("deps/goldrush/ebin"),
     code:add_patha("deps/lager/ebin"),

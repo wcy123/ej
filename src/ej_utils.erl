@@ -6,7 +6,7 @@
          getenv/2,
          getenv/3,
          %% app_start_sequence/1, get_so_path/1
-         is_directory/1,
+         %% is_directory/1,
          code_module_dir/2
         ]).
 -include_lib("kernel/include/file.hrl").
@@ -64,21 +64,21 @@ maybe_start_link_entry(Name, M,F,A) ->
 code_module_dir(Module,SubDir) ->
     Mod = code:which(Module),
     EbinDir = filename:dirname(Mod),
-    true = is_directory(EbinDir),
+    true = filelib:is_dir(EbinDir),
     AppDir = filename:dirname(EbinDir),
-    true = is_directory(AppDir),
+    true = filelib:is_dir(AppDir),
     Res = filename:join([AppDir | SubDir ]),
-    true = is_directory(Res),
+    true = filelib:is_dir(Res),
     Res.
 
-is_directory(D) ->
-    try {ok, #file_info{ type = directory } } =
-             file:read_file_info(D),
-         true
-    catch
-        error:{badmatch,_} ->
-            false
-    end.
+%% is_directory(D) ->
+%%     try {ok, #file_info{ type = directory } } =
+%%              file:read_file_info(D),
+%%          true
+%%     catch
+%%         error:{badmatch,_} ->
+%%             false
+%%     end.
 
 
 
