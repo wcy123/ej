@@ -23,12 +23,17 @@
 new(Vars) ->
     ej_vars:add_module(?MODULE,
                        #{
+                          socket => undefined
                         },
                        Vars).
-ul({tcp, _Socket, Data}, Vars) ->
-    ej_c2s:ul({data, Data}, ?MODULE, Vars).
-dl(_Args, Vars) ->
+ul({tcp, Socket, Data}, Vars) ->
+    NewVars = ej_vars:set(socket, Socket, ?MODULE, Vars),
+    ej_c2s:ul({data, Data}, ?MODULE, NewVars).
+dl({data, Data}, Vars) ->
+    io:write(Data),
+    %% [{Data, Vars}]),
+    Vars;
+dl( _Args, Vars) ->
     Vars.
-
 terminate(_Socket, Vars) ->
     Vars.

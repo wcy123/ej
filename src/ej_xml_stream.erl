@@ -46,8 +46,10 @@ ul({data, Data}, Vars) ->
 report_event(E, Vars) when is_map(Vars) ->
     ej_c2s:ul(E, ?MODULE, Vars).
 
-dl(_Args, _Vars) ->
-    1.
+dl({send_xml, XMLs}, Vars) ->
+    IOData = lists:map(fun element_to_binary/1, XMLs),
+    ej_c2s:dl({data, IOData}, ?MODULE, Vars).
+
 terminate(_Args, _Vars) ->
     1.
 
