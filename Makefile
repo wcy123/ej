@@ -5,7 +5,7 @@ all: compile dialyzer
 
 $(DEPSOLVER_PLT):
 	-dialyzer --output_plt $(DEPSOLVER_PLT) --build_plt \
-                --apps erts kernel stdlib crypto public_key -r deps
+                --apps erts kernel stdlib crypto public_key mnesia sasl -r deps
 
 compile:
 	rebar compile skip_deps=true

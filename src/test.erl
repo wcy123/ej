@@ -3,8 +3,8 @@
 -export([on_init/2,on_data/4]).
 on_init(_Pid, Socket) ->
     Response = "0>: Hello\n",
-    ok = gen_tcp:send(Socket, Response),
-    ok = ej_c2s_main_loop:set_state(Socket, 1).
+    ok = gen_tcp:send(Socket, Response).
+    %%ok = ej_c2s_main_loop:set_state(Socket, 1).
 on_data(_Pid, Socket, Data, State) ->
     Response = [io_lib:format("~p>: ", [State]), Data],
     gen_tcp:send(Socket, Response),

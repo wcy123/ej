@@ -104,7 +104,7 @@ make_error_reply(#xmlel{name = Name, attrs = Attrs,
 	       SubTags ++
 		 [#xmlel{name = <<"error">>,
 			 attrs = [{<<"code">>, Code}],
-			 children = [{xml_cdata, Desc}]}]}.
+			 children = [{xmlcdata, Desc}]}]}.
 
 -spec make_error_reply(xmlel(), xmlel()) -> xmlel().
 
@@ -138,7 +138,7 @@ make_error_reply_attrs(Attrs) ->
 
 make_error_element(Code, Desc) ->
     #xmlel{name = <<"error">>, attrs = [{<<"code">>, Code}],
-	   children = [{xml_cdata, Desc}]}.
+	   children = [{xmlcdata, Desc}]}.
 
 -spec make_correct_from_to_attrs(binary(), binary(), [attr()]) -> [attr()].
 
@@ -583,24 +583,24 @@ rsm_encode_out(#rsm_out{count = Count, index = Index,
 rsm_encode_first(undefined, undefined, Arr) -> Arr;
 rsm_encode_first(First, undefined, Arr) ->
     [#xmlel{name = <<"first">>, attrs = [],
-	    children = [{xml_cdata, First}]}
+	    children = [{xmlcdata, First}]}
      | Arr];
 rsm_encode_first(First, Index, Arr) ->
     [#xmlel{name = <<"first">>,
 	    attrs = [{<<"index">>, i2l(Index)}],
-	    children = [{xml_cdata, First}]}
+	    children = [{xmlcdata, First}]}
      | Arr].
 
 rsm_encode_last(undefined, Arr) -> Arr;
 rsm_encode_last(Last, Arr) ->
     [#xmlel{name = <<"last">>, attrs = [],
-	    children = [{xml_cdata, Last}]}
+	    children = [{xmlcdata, Last}]}
      | Arr].
 
 rsm_encode_count(undefined, Arr) -> Arr;
 rsm_encode_count(Count, Arr) ->
     [#xmlel{name = <<"count">>, attrs = [],
-	    children = [{xml_cdata, i2l(Count)}]}
+	    children = [{xmlcdata, i2l(Count)}]}
      | Arr].
 
 -spec add_delay_info(xmlel(), jid() | ljid() | binary(), erlang:timestamp())
@@ -625,16 +625,16 @@ add_delay_info(El, From, Time, Desc) ->
 		{<<"">>, <<"">>} ->
 		    DelayTag;
 		{OldDesc, <<"">>} ->
-		    DelayTag#xmlel{children = [{xml_cdata, OldDesc}]};
+		    DelayTag#xmlel{children = [{xmlcdata, OldDesc}]};
 		{<<"">>, NewDesc} ->
-		    DelayTag#xmlel{children = [{xml_cdata, NewDesc}]};
+		    DelayTag#xmlel{children = [{xmlcdata, NewDesc}]};
 		{OldDesc, NewDesc} ->
 		    case binary:match(OldDesc, NewDesc) of
 		      nomatch ->
 			  FinalDesc = <<OldDesc/binary, ", ", NewDesc/binary>>,
-			  DelayTag#xmlel{children = [{xml_cdata, FinalDesc}]};
+			  DelayTag#xmlel{children = [{xmlcdata, FinalDesc}]};
 		      _ ->
-			  DelayTag#xmlel{children = [{xml_cdata, OldDesc}]}
+			  DelayTag#xmlel{children = [{xmlcdata, OldDesc}]}
 		    end
 	      end,
 	  NewEl = xml:remove_subtags(El, <<"delay">>, {<<"xmlns">>, ?NS_DELAY}),
