@@ -69,7 +69,7 @@ start() ->
     State0 = read_file(Config),
     State = validate_opts(State0),
     %% This start time is used by mod_last:
-    {MegaSecs, Secs, _} = erlang:timestamp(),
+    {MegaSecs, Secs, _} = erlang:now(),
     UnixTime = MegaSecs*1000000 + Secs,
     SharedKey = case erlang:get_cookie() of
                     nocookie ->

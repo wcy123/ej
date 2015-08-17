@@ -162,7 +162,8 @@ my_test_case_1(_Config) ->
     Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, Vars0),
     true = is_map(Vars1),
     Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0'>" >>,
-    {ok, Vars2} = ej_c2s:ul({tcp, 1,  Data}, Vars1),
+    Vars2 = ej_c2s:ul({tcp, 1,  Data}, Vars1),
+    true = is_map(Vars2),
     Res = {
       {me, self()}
       %%Vars2,

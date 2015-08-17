@@ -83,11 +83,51 @@ init([]) ->
                  intensity => 5,
                  period => 1},
     {ok,
-     { SupFlags,
-       [Hook,
-        Random,
-        PortGC,
-        EventManager,
-        C2SMainLoop,
-        C2SListener]
-     }}.
+     r18_to_r17({ SupFlags,
+                  [
+                   Hook,
+                   Random,
+                   PortGC,
+                   EventManager,
+                   C2SMainLoop,
+                   C2SListener
+                  ]
+                })}.
+
+%% R17 does not support map pattern matching.
+%% r18_to_r17(#{
+%%               id => Id,
+%%               start => Start,
+%%               restart => Restart,
+%%               shutdown => Shutdown,
+%%               type => Type,
+%%               modules => Modules
+%%             } = _ChildSpec ) ->
+%%     {Id, Start, Restart, Shutdown, Type, Modules};
+%% r18_to_r17(#{
+%%               strategy => Strategy,
+%%               intensity => Intensity,
+%%               period => Period}) ->
+%%     {Strategy, Intensity, Period};
+%% r18_to_r17({SupFlags, ChildrenSpec}) ->
+%%     { r18_to_r17(SupFlags),
+%%       lists:maps(fun r18_to_r17/1, ChildrenSpec) }.
+
+r18_to_r17_child_spec(ChildSpec ) ->
+    {
+      maps:get(id,ChildSpec),
+      maps:get(start,ChildSpec),
+      maps:get(restart,ChildSpec),
+      maps:get(shutdown,ChildSpec),
+      maps:get(type,ChildSpec),
+      maps:get(modules,ChildSpec)
+    }.
+r18_to_r17_sup_flag(SupFlags) ->
+    {
+      maps:get(strategy,SupFlags),
+      maps:get(intensity,SupFlags),
+      maps:get(period,SupFlags)
+    }.
+r18_to_r17({SupFlags, ChildrenSpec}) ->
+    { r18_to_r17_sup_flag(SupFlags),
+      lists:map(fun r18_to_r17_child_spec/1, ChildrenSpec) }.

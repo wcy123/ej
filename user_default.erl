@@ -23,6 +23,7 @@ setup_env() ->
     code:add_patha("deps/p1_yaml/ebin"),
     code:add_patha("deps/p1_zlib/ebin"),
     code:add_patha("deps/etcp_server/ebin"),
+    code:add_patha("./tests"),
     code:add_patha("./ebin").
 
 start(ejabberd_config) ->

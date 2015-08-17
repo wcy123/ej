@@ -44,8 +44,7 @@ new(Vars) ->
                        NewVars1).
 
 ul(Args, Vars) ->
-    io:format("gogo ~p~n",[Args]),
-    {ok, Vars}.
+    ej_c2s:ul(Args,?MODULE,Vars).
 
 dl({next_state, State}, Vars) ->
     %% OldState = ej_vars:get(ul_entity,?MODULE,Vars),

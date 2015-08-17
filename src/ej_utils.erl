@@ -52,7 +52,7 @@ getenv(Env, Default, Separator) ->
 maybe_start_link(Name,M,F,A)  ->
     case whereis(Name) of
         undefined ->
-            {ok, Pid} = proc_lib:start(?MODULE,maybe_start_link_entry,[Name,M,F,A]),
+            {ok, Pid} = proc_lib:start_link(?MODULE,maybe_start_link_entry,[Name,M,F,A]),
             {ok, Pid};
         Pid -> {ok , Pid}
     end.
@@ -79,7 +79,3 @@ code_module_dir(Module,SubDir) ->
 %%         error:{badmatch,_} ->
 %%             false
 %%     end.
-
-
-
-

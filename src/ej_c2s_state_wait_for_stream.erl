@@ -7,10 +7,15 @@
 %%% Created : 14 Aug 2015 by Wang Chunye <>
 %%%-------------------------------------------------------------------
 -module(ej_c2s_state_wait_for_stream).
+-include("ejabberd.hrl").
+-include("logger.hrl").
+-include("jlib.hrl").
+
 
 %% API
 -export([
-         new/1
+         new/1,
+         ul/2
         ]).
 
 %%%===================================================================
@@ -27,6 +32,11 @@ new(Vars) ->
     ej_vars:add_module(?MODULE, #{
 
                          }, Vars).
+ul({xml_stream_start, _Name, Attrs}, Vars) ->
+    DefaultLang = ?MYLANG,
+    io:format("~p~n",[DefaultLang]),
+    Vars.
+
 
 
 %%%===================================================================
