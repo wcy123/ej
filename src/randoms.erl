@@ -34,14 +34,15 @@
 start() ->
     case whereis(random_generator) of
         undefined ->
-            Pid = proc_lib:spawn_link(randoms, init, []),
-            true = register(random_generator, Pid),
+            Pid = proc_lib:start_link(randoms, init, []),
             {ok,Pid};
         Pid ->
             {ok,Pid}
     end.
 
 init() ->
+    true = register(random_generator, self()),
+    proc_lib:init_ack(self()),
     {A1, A2, A3} = erlang:timestamp(), random:seed(A1, A2, A3), loop().
 
 loop() ->
