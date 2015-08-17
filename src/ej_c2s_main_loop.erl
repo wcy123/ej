@@ -80,7 +80,9 @@ handle_call(get_pid, _From, State) ->
     {reply, {ok, self()}, State};
 handle_call({set_state, Socket, ModuleState}, _From, State) ->
     OldTree = State#state.db,
-    NewTree = OldTree#{ Socket => ModuleState},
+    %% R17.5 does not support the syntax as below
+    %%    NewTree = OldTree#{ Socket => ModuleState},
+    NewTree = maps:put(Socket, ModuleState, OldTree),
     NewState = State#state{db = NewTree},
     inet:setopts(Socket, [{active,once}]),
     {reply, ok, NewState};

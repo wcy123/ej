@@ -12,7 +12,7 @@
          add_module/3,
          get/2,
          get/3,
-         set/3,
+         %% set/3,
          set/4
         ]).
 -type ej_module() :: atom().
@@ -42,15 +42,15 @@ add_module(Module, ModuleVars, Vars) ->
 get(Module, Vars) ->
     maps:get(Module, Vars).
 
-
--spec set(Module :: ej_module(),
-          ModuleVars :: ej_module_vars(),
-          Vars:: ej_vars()) ->
-                 ej_vars().
-set(Module, ModuleVars, Vars) ->
-    OldModuleVars = maps:get(Module, Vars, #{}),
-    NewModuleVars = maps:merge(OldModuleVars,ModuleVars),
-    maps:put(Module,NewModuleVars,Vars).
+%% this function is as same as the add_module, so commet it out.
+%% -spec set(Module :: ej_module(),
+%%           ModuleVars :: ej_module_vars(),
+%%           Vars:: ej_vars()) ->
+%%                  ej_vars().
+%% set(Module, ModuleVars, Vars) ->
+%%     OldModuleVars = maps:get(Module, Vars, #{}),
+%%     NewModuleVars = maps:merge(OldModuleVars,ModuleVars),
+%%     maps:put(Module,NewModuleVars,Vars).
 
 -spec get(Key :: atom(),
           Module :: ej_module(),
@@ -73,5 +73,7 @@ set(Key, Value, Module, Vars) ->
 %%% internal functions
 for_each_module(M, Vars) ->
     OldV = maps:get(M,Vars,#{}),
-    NewVars0 = Vars#{ M => OldV },
+    %% R17.5 does not support the syntax as below, replace with maps:put
+    %%   NewVars0 = Vars#{ M => OldV },
+    NewVars0 = maps:put(M, OldV, Vars),
     M:new(NewVars0).

@@ -70,6 +70,8 @@ end_per_group(_GroupName, _Config) ->
 %% Reason = term()
 %% @end
 %%--------------------------------------------------------------------
+init_per_testcase(my_test_case_1, Config) ->
+    init_per_testcase_my_test_case_1(Config);
 init_per_testcase(_TestCase, Config) ->
     Config.
 
@@ -81,6 +83,8 @@ init_per_testcase(_TestCase, Config) ->
 %% Reason = term()
 %% @end
 %%--------------------------------------------------------------------
+end_per_testcase(my_test_case_1, Config) ->
+    end_per_testcase_my_test_case_1(Config);
 end_per_testcase(_TestCase, _Config) ->
     ok.
 
@@ -111,6 +115,7 @@ groups() ->
 all() ->
     [my_test_case_0,my_test_case_1].
 
+
 %%--------------------------------------------------------------------
 %% @spec TestCase() -> Info
 %% Info = [tuple()]
@@ -132,7 +137,7 @@ my_test_case_0(_Config) ->
     _Vars = ej_c2s:new(),
     ok.
 
-my_test_case_1(_Config) ->
+init_per_testcase_my_test_case_1(Config) ->
     process_flag(trap_exit,true),
     {ok, CollectorPid } =
         et_collector:start_link([{trace_global, true},
@@ -142,6 +147,16 @@ my_test_case_1(_Config) ->
     %%{ok, _Pid1} = et_collector:start_trace_port(4477),
     %%{trace_client_pid, _Pid2} = et_collector:start_trace_client(CollectorPid, ip, 4477),
     %%{old_pattern, _ }  = et_collector:change_pattern(CollectorPid, {et,max}),
+    [{ collector_pid, CollectorPid} | Config ].
+end_per_testcase_my_test_case_1(Config) ->
+    CollectorPid = proplists:get_value(collector_pid, Config),
+    et_collector:iterate(CollectorPid, first, infinity, fun replay_event/2, []),
+    catch et_collector:stop(CollectorPid),
+    Config.
+
+
+
+my_test_case_1(_Config) ->
     Vars0 = ej_c2s:new(),
     true = is_map(Vars0),
     Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, Vars0),
@@ -151,11 +166,6 @@ my_test_case_1(_Config) ->
     Res = {
       {me, self()}
       %%Vars2,
-      , {collector_pid , CollectorPid}
-      %% , _Pid2
-      , et_collector:get_table_size(CollectorPid)
-      , et_collector:iterate(CollectorPid, first, infinity, fun replay_event/2, [])
-      , catch et_collector:stop(CollectorPid)
     },
 
     Res.
@@ -204,4 +214,3 @@ setup_env() ->
     Path = code:get_path(),
     ct:log("seting up env is done ~p~n",[Path])
     .
-

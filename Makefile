@@ -12,6 +12,6 @@ compile:
 dialyzer:
 	dialyzer --fullpath  --plt $(DEPSOLVER_PLT) -pa deps/p1_xml/ebin -pa deps/lager/ebin -Wrace_conditions --src src
 
-
+# -no_auto_compile
 test:
-	ct_run -cover cover.spec -cover_stop false -no_auto_compile -verbosity 99 -pa ebin -logdir /usr/share/nginx/www/log -dir tests
+	ct_run -cover cover.spec -cover_stop false  -verbosity 99 -pa ebin -logdir /var/www/html/log -dir tests
