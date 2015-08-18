@@ -29,19 +29,26 @@
 
 -export([get_string/0]).
 
--export([start/0, init/0]).
+-export([start/0, stop/0, init/0]).
 
 start() ->
     ej_utils:maybe_start_link(random_generator,?MODULE, init,[]).
+
+stop() ->
+    random_generator ! {self(), stop},
+    receive M -> M
+    after 1000 ->  timeout
+    end.
 
 init() ->
     {A1, A2, A3} = erlang:now(), random:seed(A1, A2, A3), loop().
 
 loop() ->
     receive
-      {From, get_random, N} ->
-	  From ! {random, random:uniform(N)}, loop();
-      _ -> loop()
+        {From, get_random, N} ->
+            From ! {random, random:uniform(N)}, loop();
+        {From, stop} -> From ! ok;
+        _ -> loop()
     end.
 
 get_string() ->
