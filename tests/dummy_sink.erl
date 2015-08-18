@@ -4,11 +4,15 @@
 new(Vars) ->
     ej_vars:add_module(?MODULE,
                        #{
-                          name => ?MODULE
+                          name => ?MODULE,
+                          output => undefined
                         },
                        Vars
                       ).
 
 dl(Args, Vars) ->
-    io:format("hahaf ~s~n", [ej_utils:term_to_string(Args)]),
-    Vars.
+    ej_vars:set(output, Args, ?MODULE, Vars).
+
+
+get_output(Vars) ->
+    ej_vars:get(output, ?MODULE, Vars).

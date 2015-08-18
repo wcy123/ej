@@ -224,6 +224,8 @@ hell_xmpp_server_1(Config) ->
     Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams___' xmlns='jabber:client' version='1.0'>" >>,
     Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink,Vars1),
     true = is_map(Vars2),
+    {data, [_, Output]} = dummy_sink:get_output(Vars2),
+    {_,_} = binary:match(Output, [<<"invalid-namespace">>]),
     Config.
 
 
