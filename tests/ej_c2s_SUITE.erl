@@ -33,9 +33,13 @@ init_per_suite(Config) ->
     %%    it read application keys as below
     %%         {ok, Mods} = application:get_key(ej, modules),
     %% so that we have to load the application
-    ok = application:load(ej),
-    %% see ejabberd_config:set_opts failed on line 627
-    ok = application:start(mnesia),
+    IsLoaded = is_application_loaded(ej),
+    if not(IsLoaded) ->
+            ok = application:load(ej),
+            %% see ejabberd_config:set_opts failed on line 627
+            ok = application:start(mnesia);
+       true -> ok
+    end,
     Config.
 
 %%--------------------------------------------------------------------
@@ -127,7 +131,8 @@ all() ->
      test_maybe_start,
      test_get_env,
      {group, group0},
-     hello_xmpp_server
+     hello_xmpp_server,
+     hell_xmpp_server
     ].
 
 test_maybe_start(_Config) ->
@@ -199,6 +204,25 @@ hello_xmpp_server_1(Config) ->
     true = is_map(Vars2),
     Config.
 
+init_hell_xmpp_server(Config) ->
+    record_event(Config).
+end_hell_xmpp_server(Config) ->
+    replay_event(Config).
+
+hell_xmpp_server(Config) ->
+    do_it([start, configure_start, hell_xmpp_server_1, configure_stop, stop],
+          Config).
+
+hell_xmpp_server_1(Config) ->
+    Vars0 = ej_c2s:new(),
+    true = is_map(Vars0),
+    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, Vars0),
+    true = is_map(Vars1),
+    %% xmlns:stream is wrong on purpose.
+    Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams___' xmlns='jabber:client' version='1.0'>" >>,
+    Vars2 = ej_c2s:ul({tcp, 1,  Data}, Vars1),
+    true = is_map(Vars2),
+    Config.
 
 
 
@@ -266,3 +290,9 @@ do_it(ActionLists,Config) ->
       (fun (F,ConfigTemp) -> ?MODULE:F(ConfigTemp) end,
        Config,
        ActionLists).
+
+is_application_loaded(App)->
+    case lists:keysearch(App,1,application:loaded_applications()) of
+        {value, _} -> true;
+        false -> false
+    end.

@@ -18,7 +18,8 @@
          new/1,
          ul/2,
          dl/2,
-         terminate/2
+         terminate/2,
+         set_socket/2
         ]).
 new(Vars) ->
     ej_vars:add_module(?MODULE,
@@ -27,13 +28,22 @@ new(Vars) ->
                         },
                        Vars).
 ul({tcp, Socket, Data}, Vars) ->
-    NewVars = ej_vars:set(socket, Socket, ?MODULE, Vars),
+    NewVars = set_socket(Socket,Vars),
     ej_c2s:ul({data, Data}, ?MODULE, NewVars).
 dl({data, Data}, Vars) ->
-    io:write(Data),
-    %% [{Data, Vars}]),
+    case get_socket(Vars) of
+        N when is_number(N) ->
+            io:write(Data);
+        Socket when is_port(Socket)->
+            ok = gen_tcp:send(Socket, Data)
+    end,
     Vars;
 dl( _Args, Vars) ->
     Vars.
+
+set_socket(Socket, Vars) ->
+    ej_vars:set(socket, Socket, ?MODULE, Vars).
+get_socket(Vars) ->
+    ej_vars:get(socket, ?MODULE, Vars).
 terminate(_Socket, Vars) ->
     Vars.

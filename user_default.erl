@@ -100,3 +100,6 @@ t3() ->
 
 t4() ->
     ct:run_test([{dir, "tests"}, {logdir,"/var/www/html/log"}, {suite, ej_c2s_SUITE}, {testcase, [configure]}]).
+
+t5() ->
+    ct:run_test([{dir, "tests"}, {logdir,"/var/www/html/log"}, {suite, ej_c2s_SUITE}, {testcase, [hell_xmpp_server]}]).
