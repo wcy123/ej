@@ -181,18 +181,9 @@ configure_stop(Config) ->
     Config.
 
 init_hello_xmpp_server(Config) ->
-    process_flag(trap_exit,true),
-    {ok, CollectorPid } =
-        et_collector:start_link([{trace_global, true},
-                                 {trace_port, 4477},
-                                 {trace_pattern, {et,max}}
-                                ]),
-    [{ collector_pid, CollectorPid} | Config ].
+    record_event(Config).
 end_hello_xmpp_server(Config) ->
-    CollectorPid = proplists:get_value(collector_pid, Config),
-    et_collector:iterate(CollectorPid, first, infinity, fun replay_event/2, []),
-    catch et_collector:stop(CollectorPid),
-    Config.
+    replay_event(Config).
 
 hello_xmpp_server(Config) ->
     do_it([start, configure_start, hello_xmpp_server_1, configure_stop, stop],
@@ -238,12 +229,19 @@ setup_env() ->
     .
 
 record_event(Config) ->
+    process_flag(trap_exit,true),
     {ok, CollectorPid } =
         et_collector:start_link([{trace_global, true},
                                  {trace_port, 4477},
                                  {trace_pattern, {et,max}}
                                 ]),
     [{collector_pid, CollectorPid} | Config].
+
+replay_event(Config) ->
+    CollectorPid = proplists:get_value(collector_pid, Config),
+    et_collector:iterate(CollectorPid, first, infinity, fun replay_event/2, []),
+    catch et_collector:stop(CollectorPid),
+    Config.
 
 replay_event(#event{
                 detail_level = DetailLevel,
@@ -253,14 +251,15 @@ replay_event(#event{
                 to = To,
                 label = Label,
                 contents = Contents
-               }, _ ) ->
+               }, Config ) ->
     {{Year,Month, Day}, {Hour, Minute, Second} } = calendar:now_to_local_time(TraceTs),
     ct:log
         %%io:format
       ("~p:~p:~p ~p:~p:~p ~p |~p| -----> ~p -----> ~p ~n                    ~p~n"
           ,[Year, Month, Day, Hour, Minute, Second,
             DetailLevel, From,Label, To,
-            Contents]).
+            Contents]),
+    Config.
 
 do_it(ActionLists,Config) ->
     lists:foldl
