@@ -36,9 +36,10 @@ start() ->
 
 stop() ->
     random_generator ! {self(), stop},
-    receive M -> M
+    receive ok -> true
     after 1000 ->  timeout
     end.
+
 
 init() ->
     {A1, A2, A3} = erlang:now(), random:seed(A1, A2, A3), loop().

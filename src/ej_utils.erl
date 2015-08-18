@@ -7,7 +7,8 @@
          getenv/3,
          %% app_start_sequence/1, get_so_path/1
          %% is_directory/1,
-         code_module_dir/2
+         code_module_dir/2,
+         term_to_string/1
         ]).
 -include_lib("kernel/include/file.hrl").
 %% private export
@@ -79,3 +80,11 @@ code_module_dir(Module,SubDir) ->
 %%         error:{badmatch,_} ->
 %%             false
 %%     end.
+
+
+%% copy from et_wx_contents_viewer.erl
+term_to_string(Term) ->
+    case catch io_lib:format("~s", [Term]) of
+        {'EXIT', _} -> io_lib:format("~p", [Term]);
+        GoodString  -> GoodString
+    end.

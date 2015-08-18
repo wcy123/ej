@@ -197,10 +197,11 @@ hello_xmpp_server(Config) ->
 hello_xmpp_server_1(Config) ->
     Vars0 = ej_c2s:new(),
     true = is_map(Vars0),
-    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, Vars0),
+    Vars00 = ej_c2s:add_bottom_module(dummy_sink,Vars0),
+    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, dummy_sink, Vars00),
     true = is_map(Vars1),
     Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0'>" >>,
-    Vars2 = ej_c2s:ul({tcp, 1,  Data}, Vars1),
+    Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink, Vars1),
     true = is_map(Vars2),
     Config.
 
@@ -216,11 +217,12 @@ hell_xmpp_server(Config) ->
 hell_xmpp_server_1(Config) ->
     Vars0 = ej_c2s:new(),
     true = is_map(Vars0),
-    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, Vars0),
+    Vars00 = ej_c2s:add_bottom_module(dummy_sink,Vars0),
+    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, dummy_sink, Vars00),
     true = is_map(Vars1),
     %% xmlns:stream is wrong on purpose.
     Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams___' xmlns='jabber:client' version='1.0'>" >>,
-    Vars2 = ej_c2s:ul({tcp, 1,  Data}, Vars1),
+    Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink,Vars1),
     true = is_map(Vars2),
     Config.
 
@@ -267,22 +269,21 @@ replay_event(Config) ->
     catch et_collector:stop(CollectorPid),
     Config.
 
-replay_event(#event{
-                detail_level = DetailLevel,
-                trace_ts = TraceTs,
-                event_ts = _EventTs,
-                from = From,
-                to = To,
-                label = Label,
-                contents = Contents
-               }, Config ) ->
-    {{Year,Month, Day}, {Hour, Minute, Second} } = calendar:now_to_local_time(TraceTs),
-    ct:log
+replay_event(
+  %% #event{
+  %%               detail_level = DetailLevel,
+  %%               trace_ts = TraceTs,
+  %%               event_ts = _EventTs,
+  %%               from = From,
+  %%               to = To,
+  %%               label = Label,
+  %%               contents = Contents
+  %%              } =
+  E, Config ) ->
+    %% {{Year,Month, Day}, {Hour, Minute, Second} } = calendar:now_to_local_time(TraceTs),
+    ct:pal
         %%io:format
-      ("~p:~p:~p ~p:~p:~p ~p |~p| -----> ~p -----> ~p ~n                    ~p~n"
-          ,[Year, Month, Day, Hour, Minute, Second,
-            DetailLevel, From,Label, To,
-            Contents]),
+      (default, 50,"~s~n", [event_to_string(E, event_ts)]),
     Config.
 
 do_it(ActionLists,Config) ->
@@ -295,4 +296,62 @@ is_application_loaded(App)->
     case lists:keysearch(App,1,application:loaded_applications()) of
         {value, _} -> true;
         false -> false
+    end.
+
+%% copy from et_wx_contents_viewer.erl
+event_to_string(Event, TsKey) ->
+    ReportedTs = Event#event.trace_ts,
+    ParsedTs   = Event#event.event_ts,
+    Deep =
+        ["DETAIL LEVEL: ", ej_utils:term_to_string(Event#event.detail_level),
+         "\nLABEL:        ", ej_utils:term_to_string(Event#event.label),
+         case Event#event.from =:= Event#event.to of
+             true ->
+                 ["\nACTOR:        ", ej_utils:term_to_string(Event#event.from)];
+             false ->
+                 ["\nFROM:         ", ej_utils:term_to_string(Event#event.from),
+                  "\nTO:           ", ej_utils:term_to_string(Event#event.to)]
+         end,
+         case ReportedTs =:= ParsedTs of
+             true ->
+                 ["\nPARSED:       ", now_to_string(ParsedTs)];
+             false ->
+                 case TsKey of
+                     trace_ts ->
+                         ["\nTRACE_TS:     ", now_to_string(ReportedTs),
+                          "\nEVENT_TS:     ", now_to_string(ParsedTs)];
+                     event_ts ->
+                         ["\nEVENT_TS:     ", now_to_string(ParsedTs),
+                          "\nTRACE_TS:     ", now_to_string(ReportedTs)]
+                 end
+         end,
+         "\nCONTENTS:\n\n", ej_utils:term_to_string(Event#event.contents)],
+    lists:flatten(Deep).
+
+now_to_string({Mega, Sec, Micro} = Now)
+  when is_integer(Mega), is_integer(Sec), is_integer(Micro) ->
+    {{Y, Mo, D}, {H, Mi, S}} = calendar:now_to_universal_time(Now),
+    lists:concat([Y, "-",
+		  pad_string(Mo, 2, $0, left), "-",
+		  pad_string(D, 2, $0, left),
+		  "T",
+		  pad_string(H, 2, $0, left), ":",
+		  pad_string(Mi, 2, $0, left), ":",
+		  pad_string(S, 2, $0, left), ".",
+		  Micro]);
+now_to_string(Other) ->
+    ej_utils:term_to_string(Other).
+pad_string(Int, MinLen, Char, Dir) when is_integer(Int) ->
+    pad_string(integer_to_list(Int), MinLen, Char, Dir);
+pad_string(Atom, MinLen, Char, Dir) when is_atom(Atom) ->
+    pad_string(atom_to_list(Atom), MinLen, Char, Dir);
+pad_string(String, MinLen, Char, Dir) when is_integer(MinLen), MinLen >= 0 ->
+    Len = length(String),
+    case {Len >= MinLen, Dir} of
+        {true, _} ->
+            String;
+        {false, right} ->
+            String ++ lists:duplicate(MinLen - Len, Char);
+        {false, left} ->
+	    lists:duplicate(MinLen - Len, Char) ++ String
     end.
