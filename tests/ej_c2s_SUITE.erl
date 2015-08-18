@@ -29,6 +29,13 @@ suite() ->
 %%--------------------------------------------------------------------
 init_per_suite(Config) ->
     setup_env(),
+    %% see ejabberd_config:get_modules_with_options
+    %%    it read application keys as below
+    %%         {ok, Mods} = application:get_key(ej, modules),
+    %% so that we have to load the application
+    ok = application:load(ej),
+    %% see ejabberd_config:set_opts failed on line 627
+    ok = application:start(mnesia),
     Config.
 
 %%--------------------------------------------------------------------
@@ -68,8 +75,6 @@ end_per_group(_GroupName, _Config) ->
 %% Reason = term()
 %% @end
 %%--------------------------------------------------------------------
-init_per_testcase(my_test_case_1, Config) ->
-    init_per_testcase_my_test_case_1(Config);
 init_per_testcase(_TestCase, Config) ->
     Config.
 
@@ -81,8 +86,6 @@ init_per_testcase(_TestCase, Config) ->
 %% Reason = term()
 %% @end
 %%--------------------------------------------------------------------
-end_per_testcase(my_test_case_1, Config) ->
-    end_per_testcase_my_test_case_1(Config);
 end_per_testcase(_TestCase, _Config) ->
     ok.
 
@@ -111,14 +114,8 @@ groups() ->
 %% @end
 %%--------------------------------------------------------------------
 all() ->
-    [start_and_stop].
+    [ start_and_stop, configure].
 
-
-%%--------------------------------------------------------------------
-%% @spec TestCase() -> Info
-%% Info = [tuple()]
-%% @end
-%%--------------------------------------------------------------------
 start_and_stop() ->
     [{repeat,3},{label, "start and stop it haha"}].
 start_and_stop(Config) ->
@@ -137,69 +134,28 @@ stop(Config)->
     true = is_process_alive(Pid),
     true = ej_port_gc:stop(Pid).
 
-my_test_case_0() ->
-    [].
-my_test_case_0(_Config) ->
-    _Vars = ej_c2s:new(),
-    ok.
+configure(Config) ->
+    lists:foldl
+        (fun (F,ConfigTemp) -> ?MODULE:F(ConfigTemp) end,
+         Config,
+         [start, configure_start, configure_stop, stop ]).
 
-init_per_testcase_my_test_case_1(Config) ->
-    process_flag(trap_exit,true),
-    {ok, CollectorPid } =
-        et_collector:start_link([{trace_global, true},
-                                 {trace_port, 4477},
-                                 {trace_pattern, {et,max}}
-                                ]),
-    %%{ok, _Pid1} = et_collector:start_trace_port(4477),
-    %%{trace_client_pid, _Pid2} = et_collector:start_trace_client(CollectorPid, ip, 4477),
-    %%{old_pattern, _ }  = et_collector:change_pattern(CollectorPid, {et,max}),
-    [{ collector_pid, CollectorPid} | Config ].
-end_per_testcase_my_test_case_1(Config) ->
-    CollectorPid = proplists:get_value(collector_pid, Config),
-    et_collector:iterate(CollectorPid, first, infinity, fun replay_event/2, []),
-    catch et_collector:stop(CollectorPid),
+configure_start(Config) ->
+    DataDir = proplists:get_value(data_dir, Config),
+    os:putenv("EJABBERD_CONFIG_PATH",
+              filename:join([DataDir,
+                             "ejabberd.yml"])),
+    ejabberd_config:start(),
+    Config.
+configure_stop(Config) ->
+    ejabberd_config:stop(),
     Config.
 
-
-
-my_test_case_1(_Config) ->
-    Vars0 = ej_c2s:new(),
-    true = is_map(Vars0),
-    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, Vars0),
-    true = is_map(Vars1),
-    Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streamsx' xmlns='jabber:client' version='1.0'>" >>,
-    Vars2 = ej_c2s:ul({tcp, 1,  Data}, Vars1),
-    true = is_map(Vars2),
-    Res = {
-      {me, self()}
-      %%Vars2,
-    },
-
-    Res.
-
-replay_event(#event{
-                detail_level = DetailLevel,
-                trace_ts = TraceTs,
-                event_ts = _EventTs,
-                from = From,
-                to = To,
-                label = Label,
-                contents = Contents
-               }, _ ) ->
-    {{Year,Month, Day}, {Hour, Minute, Second} } = calendar:now_to_local_time(TraceTs),
-    ct:log
-        %%io:format
-      ("~p:~p:~p ~p:~p:~p ~p |~p| -----> ~p -----> ~p ~n                    ~p~n"
-          ,[Year, Month, Day, Hour, Minute, Second,
-            DetailLevel, From,Label, To,
-            Contents]).
 
 %%%
 % internal functions
 %%%
 setup_env() ->
-    os:putenv("EJABBERD_CONFIG_PATH","ejabberd.yml"),
-
     Mod = code:which(?MODULE),
     TestDir = filename:dirname(Mod),
     AppDir = filename:dirname(TestDir),

@@ -97,3 +97,6 @@ t2() ->
     {ok, Vars2} = ej_c2s_vars:ul({tcp, 1,  Data}, Vars1).
 t3() ->
     ct:run_test([{dir, "tests"}, {logdir,"/var/www/html/log"}, {suite, ej_c2s_SUITE}, {testcase, [start_and_stop]}]).
+
+t4() ->
+    ct:run_test([{dir, "tests"}, {logdir,"/var/www/html/log"}, {suite, ej_c2s_SUITE}, {testcase, [configure]}]).

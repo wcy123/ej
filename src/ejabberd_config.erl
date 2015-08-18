@@ -26,7 +26,7 @@
 -module(ejabberd_config).
 -author('alexey@process-one.net').
 
--export([start/0, load_file/1, reload_file/0, read_file/1,
+-export([start/0, stop/0, load_file/1, reload_file/0, read_file/1,
 	 add_global_option/2, add_local_option/2,
 	 get_global_option/2, get_local_option/2,
          get_global_option/3, get_local_option/3,
@@ -81,6 +81,11 @@ start() ->
     State2 = set_option({shared_key, global}, SharedKey, State1),
     set_opts(State2).
 
+stop() ->
+    case mnesia:delete_table(local_config) of
+        {atomic, ok} -> true;
+        _ -> false
+    end.
 %% @doc Get the filename of the ejabberd configuration file.
 %% The filename can be specified with: erl -config "/path/to/ejabberd.yml".
 %% It can also be specified with the environtment variable EJABBERD_CONFIG_PATH.
