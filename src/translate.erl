@@ -27,7 +27,7 @@
 
 -author('alexey@process-one.net').
 
--export([start/0, load_dir/1, load_file/2,
+-export([start/0, stop/0,load_dir/1, load_file/2,
 	 translate/2]).
 
 -include("ejabberd.hrl").
@@ -45,6 +45,9 @@ start() ->
 	  end,
     load_dir(iolist_to_binary(Dir)),
     ok.
+
+stop() ->
+    ets:delete(translations).
 
 -spec load_dir(binary()) -> ok.
 

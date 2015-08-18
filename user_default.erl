@@ -95,3 +95,5 @@ t2() ->
     {ok, Vars1} =  ej_c2s_vars:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, Vars0),
     Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0'>" >>,
     {ok, Vars2} = ej_c2s_vars:ul({tcp, 1,  Data}, Vars1).
+t3() ->
+    ct:run_test([{dir, "tests"}, {logdir,"/var/www/html/log"}, {suite, ej_c2s_SUITE}, {testcase, [start_and_stop]}]).

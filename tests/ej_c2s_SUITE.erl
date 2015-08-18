@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 16 Aug 2015 by Wang Chunye <>
 %%%-------------------------------------------------------------------
--module(ej_vars_SUITE).
+-module(ej_c2s_SUITE).
 
 -compile(export_all).
 
@@ -28,7 +28,8 @@ suite() ->
 %% @end
 %%--------------------------------------------------------------------
 init_per_suite(Config) ->
-    setup_env().
+    setup_env(),
+    Config.
 
 %%--------------------------------------------------------------------
 %% @spec end_per_suite(Config0) -> term() | {save_config,Config1}
@@ -110,8 +111,7 @@ groups() ->
 %% @end
 %%--------------------------------------------------------------------
 all() ->
-    [].
-%% [ my_test_case_0,my_test_case_1].
+    [start_and_stop].
 
 
 %%--------------------------------------------------------------------
@@ -119,18 +119,26 @@ all() ->
 %% Info = [tuple()]
 %% @end
 %%--------------------------------------------------------------------
+start_and_stop() ->
+    [{repeat,3},{label, "start and stop it haha"}].
+start_and_stop(Config) ->
+    NewConfig0 = start(Config),
+    NewConfig1 = stop(NewConfig0),
+    NewConfig1.
+
+start(Config)->
+    ej_app:load_nif(),
+    translate:start(),
+    {ok, PortGcPid } = ej_port_gc:start_link(),
+    [{port_gc_pid, PortGcPid} | Config].
+stop(Config)->
+    Pid = proplists:get_value(port_gc_pid, Config),
+    true = translate:stop(),
+    true = is_process_alive(Pid),
+    true = ej_port_gc:stop(Pid).
+
 my_test_case_0() ->
     [].
-
-%%--------------------------------------------------------------------
-%% @spec TestCase(Config0) ->
-%%               ok | exit() | {skip,Reason} | {comment,Comment} |
-%%               {save_config,Config1} | {skip_and_save,Reason,Config1}
-%% Config0 = Config1 = [tuple()]
-%% Reason = term()
-%% Comment = term()
-%% @end
-%%--------------------------------------------------------------------
 my_test_case_0(_Config) ->
     _Vars = ej_c2s:new(),
     ok.
