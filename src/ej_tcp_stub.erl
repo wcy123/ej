@@ -20,6 +20,7 @@
          dl/2,
          %% terminate/2,
          %% set_socket/2
+         get_socket/1,
          get_ip/1
          %% @todo add set_ip
 
@@ -40,6 +41,8 @@ dl({data, Data}, Vars) ->
 
 set_socket(Socket, Vars) ->
     ej_vars:set(socket, Socket, ?MODULE, Vars).
+get_socket(Vars) ->
+    ej_vars:get(socket, ?MODULE, Vars).
 
 get_ip(Vars) ->
     ej_vars:get(ip, ?MODULE, Vars).

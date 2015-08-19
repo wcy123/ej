@@ -11,6 +11,7 @@ new(Vars) ->
                       ).
 
 dl(Args, Vars) ->
+    io:format(user,"~p~n",[Args]),
     ej_vars:set(output, Args, ?MODULE, Vars).
 
 

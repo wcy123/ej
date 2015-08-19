@@ -68,7 +68,7 @@ init([]) ->
       id => ej_listener_c2s_sup,
       start => { etcp_listener_sup, start_link,
                  [ej_listener_c2s_sup,
-                  5222,
+                  5422,
                   [{reuseaddr,true},
                    {active,false},
                    {packet, 0},

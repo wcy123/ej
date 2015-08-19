@@ -103,3 +103,23 @@ t4() ->
 
 t5() ->
     ct:run_test([{dir, "tests"}, {logdir,"/var/www/html/log"}, {suite, ej_c2s_SUITE}, {testcase, [hello_xmpp_server]}]).
+
+t6() ->
+    Vars0 = ej_c2s:new(),
+    true = is_map(Vars0),
+    Vars00 = ej_c2s:add_bottom_module(dummy_sink,Vars0),
+    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, dummy_sink, Vars00),
+    true = is_map(Vars1),
+    Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0'>" >>,
+    Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink, Vars1),
+    true = is_map(Vars2),
+    <<"localhost">> = ej_c2s_state:get_server(Vars2),
+
+
+    Data2 = <<"<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN' xmlns:ga='http://www.google.com/talk/protocol/auth' ga:client-uses-full-bind-result='true'>AHRlc3QxADEyMw==</auth>">>,
+    Vars3 = ej_c2s:ul({tcp, 1,  Data2}, dummy_sink, Vars2),
+    io:format(user,"~s:~p: [~p] -- ~p~n",[?FILE, ?LINE, ?MODULE, {Vars2, Vars3}]),
+    Output0 = dummy_sink:get_output(Vars3),
+    ct:pal(default, 99,"~p~n",[{Output0, Vars3}]),
+    {data, [Output]} = Output0,
+    {_,_} = binary:match(Output, [<<"success">>]).

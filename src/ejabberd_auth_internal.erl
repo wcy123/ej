@@ -56,12 +56,19 @@
 %%% API
 %%%----------------------------------------------------------------------
 start(Host) ->
-    {atomic,ok} = mnesia:create_table(passwd,
-			[{disc_copies, [node()]},
-			 {attributes, record_info(fields, passwd)}]),
-    {atomic,ok} = mnesia:create_table(reg_users_counter,
+    case  mnesia:create_table(passwd,
+                              [{disc_copies, [node()]},
+                               {attributes, record_info(fields, passwd)}]) of
+        {atomic,ok} -> ok;
+        {aborted, {already_exists, _}} -> ok
+    end,
+
+    case mnesia:create_table(reg_users_counter,
 			[{ram_copies, [node()]},
-			 {attributes, record_info(fields, reg_users_counter)}]),
+			 {attributes, record_info(fields, reg_users_counter)}]) of
+        {atomic,ok} -> ok;
+        {aborted, {already_exists, _}} -> ok
+    end,
     update_table(),
     update_reg_users_counter_table(Host),
     maybe_alert_password_scrammed_without_option(),

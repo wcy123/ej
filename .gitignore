@@ -47,3 +47,5 @@ XmppAddr.hrl
 *.beam
 .rebar/erlcinfo
 ttb_last_config
+tests/Mnesia*
+variables-ct*

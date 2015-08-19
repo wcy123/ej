@@ -36,8 +36,8 @@ ul({xml_stream_element, El}, Vars) ->
     NS = xml:get_attr_s(<<"xmlns">>, Attrs),
     case {NS , Name} of
         {?NS_SASL, <<"auth">>} -> go_on_auth(Els, Attrs, Vars)
-    end,
-    Vars.
+    end.
+
 
 go_on_auth(Els, Attrs, Vars) ->
     Mech = xml:get_attr_s(<<"mechanism">>, Attrs),
@@ -46,8 +46,7 @@ go_on_auth(Els, Attrs, Vars) ->
            ej_c2s_state_wait_for_stream:get_sasl_state(Vars),
            Mech, ClientIn) of
         {ok, Props} ->
-            go_on_auth_ok(Props, Vars)
-
+            go_on_auth_ok(Props, Vars);
         %% {continue, ServerOut, NewSASLState} ->
         %%     send_element(StateData,
         %%                  #xmlel{name = <<"challenge">>,
@@ -57,29 +56,13 @@ go_on_auth(Els, Attrs, Vars) ->
         %%                               jlib:encode_base64(ServerOut)}]}),
         %%     fsm_next_state(wait_for_sasl_response,
         %%                    StateData#state{sasl_state = NewSASLState});
-        %% {error, Error, Username} ->
-        %%     ?INFO_MSG("(~w) Failed authentication for ~s@~s from ~s",
-        %%               [StateData#state.socket,
-        %%                Username, StateData#state.server,
-        %%                ejabberd_config:may_hide_data(jlib:ip_to_list(StateData#state.ip))]),
-        %%     ejabberd_hooks:run(c2s_auth_result, StateData#state.server,
-        %%                        [false, Username, StateData#state.server,
-        %%                         StateData#state.ip]),
-        %%     send_element(StateData,
-        %%                  #xmlel{name = <<"failure">>,
-        %%                         attrs = [{<<"xmlns">>, ?NS_SASL}],
-        %%                         children =
-        %%                             [#xmlel{name = Error, attrs = [],
-        %%                                     children = []}]}),
-        %%     fsm_next_state(wait_for_feature_request, StateData);
-        %% {error, Error} ->
-        %%     send_element(StateData,
-        %%                  #xmlel{name = <<"failure">>,
-        %%                         attrs = [{<<"xmlns">>, ?NS_SASL}],
-        %%                         children =
-        %%                             [#xmlel{name = Error, attrs = [],
-        %%                                     children = []}]}),
-        %%     fsm_next_state(wait_for_feature_request, StateData)
+        {error, Error, Username} ->
+            go_on_auth_failed(Username, Error, Vars)
+            %%                         attrs = [{<<"xmlns">>, ?NS_SASL}],
+            %%                         children =
+            %%                             [#xmlel{name = Error, attrs = [],
+            %%                                     children = []}]}),
+            %%     fsm_next_state(wait_for_feature_request, StateData)
     end.
 go_on_auth_ok(Props, Vars) ->
     %% it seems do nothing for reset_stream
@@ -107,6 +90,25 @@ go_on_auth_ok(Props, Vars) ->
     NewVars5 = ej_c2s_state:set_user(U,NewVars4),
     NewVars6 = ej_c2s_state:change_state(ej_c2s_state_wait_for_stream,NewVars5),
     NewVars6.
+
+go_on_auth_failed(Username, Error, Vars) ->
+    Server = ej_c2s_state:get_server(Vars),
+    IP = ej_tcp_stub:get_ip(Vars),
+    ?INFO_MSG("(~w) Failed authentication for ~s@~s from ~s",
+              [ ej_tcp_stub:get_socket(Vars),
+                Username, Server,
+                ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
+    ejabberd_hooks:run(c2s_auth_result, ej_c2s_state:get_server(Vars),
+                       [false, Username, Server, IP]),
+    NewVars = ej_c2s:dl({
+                send_xml,
+                [#xmlel{name = <<"failure">>,
+                        attrs = [{<<"xmlns">>, ?NS_SASL}],
+                        children =
+                            [#xmlel{name = Error, attrs = [],
+                                    children = []}]}]
+              }, ?MODULE, Vars),
+    NewVars.
 
 %%%===================================================================
 %%% Internal functions
