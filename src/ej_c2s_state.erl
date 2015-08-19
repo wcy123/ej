@@ -27,7 +27,10 @@
          set_lang/2,
          change_state/2,
          get_server/1,
-         set_server/2
+         set_server/2,
+         get_resource/1,
+         set_resource/2,
+         stream_mgmt_enabled/1
         ]).
 -spec new(Vars :: ej_vars:ej_vars()) -> ej_vars:ej_vars().
 new(Vars) ->
@@ -59,6 +62,7 @@ new(Vars) ->
                           server => <<"">>,
                           user => <<"">>,
                           lang => <<"">>,
+                          resource => <<"">>,
                           %% the stream id
                           stream_id => randoms:get_string()
                         },
@@ -89,6 +93,16 @@ get_lang(Vars) ->
     ej_vars:get(lang,?MODULE, Vars).
 set_lang(Value,Vars) ->
     ej_vars:set(lang, Value, ?MODULE, Vars).
+
+get_resource(Vars) ->
+    ej_vars:get(resource,?MODULE, Vars).
+set_resource(Value,Vars) ->
+    ej_vars:set(resource, Value, ?MODULE, Vars).
+
+%% todo
+stream_mgmt_enabled(_Vars) ->
+    true.
+
 
 change_state(State, Vars) ->
     %% OldState = ej_vars:get(ul_entity,?MODULE,Vars),

@@ -230,8 +230,19 @@ hello_xmpp_server_1(Config) ->
     Data2 = <<"<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN' xmlns:ga='http://www.google.com/talk/protocol/auth' ga:client-uses-full-bind-result='true'>AHRlc3QxADEyMw==</auth>">>,
     Vars3 = ej_c2s:ul({tcp, 1,  Data2}, dummy_sink, Vars2),
     Output0 = dummy_sink:get_output(Vars3),
-    {data, [Output]} = Output0,
-    {_,_} = binary:match(Output, [<<"success">>]),
+    {data, [Output1]} = Output0,
+    {_,_} = binary:match(Output1, [<<"success">>]),
+
+
+    Vars4 = ej_vars:set(output, <<"no_output">>, dummy_sink, Vars3),
+    Vars5 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink, Vars4),
+    ej_c2s_state_wait_for_bind = ej_vars:get(ul_entity, ej_c2s_state, Vars5),
+
+    Output2 = dummy_sink:get_output(Vars5),
+    Bind = << "stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/>" >>,
+    {data, [Output3]} = Output2,
+    {_,_} = binary:match(Output3, [Bind]),
+
     Config.
 
 init_hell_xmpp_server(Config) ->

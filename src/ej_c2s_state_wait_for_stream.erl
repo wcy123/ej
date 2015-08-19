@@ -89,10 +89,10 @@ go_on_3(Lang,Server,Attrs,Vars) ->
         false ->
             go_on_not_authenticated(Server,Vars);
         true ->
-            error({not_implemented, Attrs, Lang})
+            go_on_authenticated(Server,Lang,Vars)
     end.
 
-go_on_not_authenticated(Server,Vars) ->
+go_on_not_authenticated(Server, Vars) ->
     DefaultLang = ?MYLANG,
     SASLState =
         cyrsasl:server_new(
@@ -146,6 +146,67 @@ go_on_not_authenticated(Server,Vars) ->
                  ?MODULE,
                  NewVars1),
     ej_c2s_state:change_state(ej_c2s_state_wait_for_feature_request,NewVars2).
+
+go_on_authenticated(Server, Lang, Vars) ->
+    case ej_c2s_state:get_resource(Vars) of
+        <<"">> ->
+            go_on_empty_resource(Server, Lang, Vars);
+        _ ->
+            go_on_nonempty_resource(Server, Lang, Vars)
+    end.
+
+go_on_empty_resource(Server,Lang,Vars) ->
+    RosterVersioningFeature =
+        ejabberd_hooks:run_fold(roster_get_versioning_feature,
+                                Server, [],
+                                [Server]),
+    StreamManagementFeature =
+        case ej_c2s_state:stream_mgmt_enabled(Vars) of
+            true ->
+                [#xmlel{name = <<"sm">>,
+                        attrs = [{<<"xmlns">>, ?NS_STREAM_MGMT_2}],
+                        children = []},
+                 #xmlel{name = <<"sm">>,
+                        attrs = [{<<"xmlns">>, ?NS_STREAM_MGMT_3}],
+                        children = []}];
+            false ->
+                []
+        end,
+    StreamFeatures1 = [#xmlel{name = <<"bind">>,
+                              attrs = [{<<"xmlns">>, ?NS_BIND}],
+                              children = []},
+                       #xmlel{name = <<"session">>,
+                              attrs = [{<<"xmlns">>, ?NS_SESSION}],
+                              children = []}]
+        ++
+        RosterVersioningFeature ++
+        StreamManagementFeature ++
+        ejabberd_hooks:run_fold(c2s_post_auth_features,
+                                Server, [], [Server]),
+    StreamFeatures = ejabberd_hooks:run_fold(c2s_stream_features,
+                                             Server, StreamFeatures1, [Server]),
+    NewVars0 = ej_c2s:dl(
+                {
+                  send_xml,
+                  [ #xmlel{name = <<"stream:features">>,
+                           attrs = [],
+                           children = StreamFeatures} ]
+                }, ?MODULE, Vars),
+    NewVars1 = ej_c2s_state:set_lang(Lang, NewVars0),
+    NewVars2 = ej_c2s_state:set_server(Server, NewVars1),
+    ej_c2s_state:change_state(ej_c2s_state_wait_for_bind, NewVars2).
+
+go_on_nonempty_resource(Server,Lang,Vars) ->
+    NewVars0 = ej_c2s:dl(
+                {
+                  send_xml,
+                  [#xmlel{name = <<"stream:features">>,
+                          attrs = [],
+                          children = []}]
+                }, ?MODULE, Vars),
+    NewVars1 = ej_c2s_state:set_lang(Lang, NewVars0),
+    NewVars2 = ej_c2s_state:set_server(Server, NewVars1),
+    ej_c2s_state:change_state(ej_c2s_state_wait_for_session, NewVars2).
 
 get_server(Attrs, Vars) ->
     case ej_c2s_state:get_server(Vars) of
