@@ -70,8 +70,6 @@ go_on_auth(Els, Attrs, Vars) ->
             %%     fsm_next_state(wait_for_feature_request, StateData)
     end.
 go_on_auth_ok(Props, Vars) ->
-    %% it seems do nothing for reset_stream
-    %%   (StateData#state.sockmod):reset_stream(StateData#state.socket),
     U = proplists:get_value(username, Props, <<>>),
     AuthModule = proplists:get_value(auth_module, Props, undefined),
     ?INFO_MSG("(~w) Accepted authentication for ~s "
@@ -94,7 +92,8 @@ go_on_auth_ok(Props, Vars) ->
     NewVars4 = ej_c2s_state_wait_for_stream:set_sasl_state(undefined,NewVars3),
     NewVars5 = ej_c2s_state:set_user(U,NewVars4),
     NewVars6 = ej_c2s_state:change_state(ej_c2s_state_wait_for_stream,NewVars5),
-    NewVars6.
+    NewVars7 = ej_xml_stream:reset_stream(NewVars6),
+    NewVars7.
 
 go_on_auth_failed(Username, Error, Vars) ->
     Server = ej_c2s_state:get_server(Vars),
