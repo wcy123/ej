@@ -74,6 +74,8 @@ start_link() ->
 
 
 stop() ->
+    %% R17 does not support gen_server:stop
+    %%   gen_server:stop(ejabberd_hooks,normal).
     gen_server:call(ejabberd_hooks,stop).
 
 

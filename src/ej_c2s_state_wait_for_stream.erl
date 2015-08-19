@@ -64,8 +64,19 @@ go_on_1(Lang, Server, Attrs, Vars) ->
     end.
 
 go_on_2(Lang, Server, Attrs, Vars) ->
-    error({hi_todo, Lang, Server, Attrs}),
-    Vars.
+    %% TODO: consider to implement this feature in the lower protocol entity
+    %% for example:
+    %%      ej_tcp_stub:change_shaper().
+    %% change_shaper(StateData, jlib:make_jid(<<"">>, Server, <<"">>)),
+    %%%
+    Version = xml:get_attr_s(<<"version">>, Attrs),
+    case Version of
+        <<"1.0">> ->
+            error({todo,Lang,Server,Attrs,Vars}),
+            Vars;
+        _ ->
+            not_version_1_0_err(Vars)
+    end.
 
 get_server(Attrs, Vars) ->
     case ej_vars:get(server, ?MODULE, Vars) of
@@ -141,7 +152,7 @@ black_list_err(IsBlacklistedIP, Lang, Vars) ->
     {true, LogReason, ReasonT} = IsBlacklistedIP,
     ?INFO_MSG("Connection attempt from blacklisted IP ~s: ~s",
               [jlib:ip_to_list(IP), LogReason]),
-    From = ?MYLANG,
+    From = ?MYNAME,
     Child = ?POLICY_VIOLATION_ERR(Lang, ReasonT),
     ej_c2s:dl({send_xml,
                [xml_1_0,
@@ -157,6 +168,36 @@ black_list_err(IsBlacklistedIP, Lang, Vars) ->
                   }
                ]}, ?MODULE, Vars).
 
+not_version_1_0_err(Vars) ->
+    DefaultLang = ?MYLANG,
+    From = ?MYNAME,
+    Child = ?POLICY_VIOLATION_ERR(DefaultLang, <<"wrong version">>),
+    ej_c2s:dl({send_xml,
+               [xml_1_0,
+                #xmlel{
+                   name  = <<"stream:stream">>,
+                   attrs = [{ <<"version">>, <<"">>},
+                            {<<"xml:lang">>, DefaultLang},
+                            {<<"xmlns">>, <<"jabber:client">>},
+                            {<<"xmlns:stream">>, <<"http://etherx.jabber.org/streams">>},
+                            {<<"id">>, ej_c2s_state:get_stream_id(Vars)},
+                            {<<"from">>, From} ],
+                   children = [Child]
+                  }
+               ]}, ?MODULE, Vars).
+
+    %% if not StateData#state.tls_enabled and
+    %%    StateData#state.tls_required ->
+    %%         send_element(StateData,
+    %%                      ?POLICY_VIOLATION_ERR(Lang,
+    %%                                            <<"Use of STARTTLS required">>)),
+    %%         send_trailer(StateData),
+    %%         {stop, normal, StateData};
+    %%    true ->
+    %%         fsm_next_state(wait_for_auth,
+    %%                        StateData#state{server = Server,
+    %%                                        lang = Lang})
+    %% end
 
 
 
