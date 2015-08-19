@@ -23,6 +23,8 @@
          set_stream_id/2,
          get_user/1,
          set_user/2,
+         get_lang/1,
+         set_lang/2,
          change_state/2,
          get_server/1,
          set_server/2
@@ -56,6 +58,7 @@ new(Vars) ->
                           %% server name
                           server => <<"">>,
                           user => <<"">>,
+                          lang => <<"">>,
                           %% the stream id
                           stream_id => randoms:get_string()
                         },
@@ -81,6 +84,11 @@ get_user(Vars) ->
     ej_vars:get(user,?MODULE, Vars).
 set_user(Value,Vars) ->
     ej_vars:set(user, Value, ?MODULE, Vars).
+
+get_lang(Vars) ->
+    ej_vars:get(lang,?MODULE, Vars).
+set_lang(Value,Vars) ->
+    ej_vars:set(lang, Value, ?MODULE, Vars).
 
 change_state(State, Vars) ->
     %% OldState = ej_vars:get(ul_entity,?MODULE,Vars),

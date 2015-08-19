@@ -35,7 +35,12 @@ ul({xml_stream_element, El}, Vars) ->
     #xmlel{name = Name, attrs = Attrs, children = Els} = El,
     NS = xml:get_attr_s(<<"xmlns">>, Attrs),
     case {NS , Name} of
-        {?NS_SASL, <<"auth">>} -> go_on_auth(Els, Attrs, Vars)
+        {?NS_SASL, <<"auth">>} -> go_on_auth(Els, Attrs, Vars);
+        {?NS_TLS, <<"starttls">>} -> error(todo);
+        {?NS_COMPRESS, <<"compress">>} -> error(todo);
+        _ ->
+            %% todo <<"Use of STARTTLS required">>
+            go_on_unknown_ns(El,Vars)
     end.
 
 
@@ -109,6 +114,45 @@ go_on_auth_failed(Username, Error, Vars) ->
                                     children = []}]}]
               }, ?MODULE, Vars),
     NewVars.
+go_on_unknown_ns(El, Vars) ->
+    NewVars = process_unauthenticated_stanza(El,Vars),
+    ej_c2s_state:change_state(wait_for_feature_request, NewVars).
+
+process_unauthenticated_stanza(El,Vars) ->
+    NewEl = case xml:get_tag_attr_s(<<"xml:lang">>, El) of
+              <<"">> ->
+                  case ej_c2s_state:get_lang(Vars) of
+                      <<"">> -> El;
+                      Lang -> xml:replace_tag_attr(<<"xml:lang">>, Lang, El)
+                  end;
+              _ -> El
+            end,
+    Server = ej_c2s_state:get_server(Vars),
+    IP = ej_tcp_stub:get_ip(Vars),
+    case jlib:iq_query_info(NewEl) of
+        #iq{} = IQ ->
+            Res = ejabberd_hooks:run_fold(c2s_unauthenticated_iq,
+                                          Server, empty,
+                                          [Server, IQ, IP]),
+            case Res of
+                empty ->
+                    ResIQ = IQ#iq{type = error,
+                                  sub_el = [?ERR_SERVICE_UNAVAILABLE]},
+                    Res1 = jlib:replace_from_to(jlib:make_jid(<<"">>,
+                                                              Server,
+                                                              <<"">>),
+                                                jlib:make_jid(<<"">>, <<"">>,
+                                                              <<"">>),
+                                                jlib:iq_to_xml(ResIQ)),
+                    XmlEl = jlib:remove_attr(<<"to">>, Res1),
+                    ej_c2s:dl({send_xml, [XmlEl]}, ?MODULE, Vars);
+                Otherwise ->
+                    ej_c2s:dl({send_xml, [Otherwise]}, ?MODULE, Vars)
+            end;
+        _ ->
+            %% Drop any stanza, which isn't IQ stanza
+            Vars
+    end.
 
 %%%===================================================================
 %%% Internal functions

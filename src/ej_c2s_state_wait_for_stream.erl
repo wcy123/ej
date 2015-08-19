@@ -57,9 +57,10 @@ ul({xml_stream_start, _Name, Attrs}, Vars) ->
 go_on_0(Attrs, Vars) ->
     Server = get_server(Attrs, Vars),
     Lang = get_lang(Attrs),
+    NewVars = ej_c2s_state:set_lang(Lang, Vars),
     case lists:member(Server, ?MYHOSTS) of
-        true -> go_on_1(Lang, Server, Attrs, Vars);
-        false -> host_unknown_err(Vars)
+        true -> go_on_1(Lang, Server, Attrs, NewVars);
+        false -> host_unknown_err(NewVars)
     end.
 
 go_on_1(Lang, Server, Attrs, Vars) ->
