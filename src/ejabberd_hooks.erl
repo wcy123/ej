@@ -30,6 +30,7 @@
 
 %% External exports
 -export([start_link/0,
+         stop/0,
 	 add/3,
 	 add/4,
 	 add/5,
@@ -70,6 +71,11 @@
 %%%----------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ejabberd_hooks}, ejabberd_hooks, [], []).
+
+
+stop() ->
+    gen_server:call(ejabberd_hooks,stop).
+
 
 -spec add(atom(), fun(), number()) -> ok.
 
@@ -132,14 +138,14 @@ delete_dist(Hook, Node, Module, Function, Seq) ->
 delete_dist(Hook, Host, Node, Module, Function, Seq) ->
     gen_server:call(ejabberd_hooks, {delete, Hook, Host, Node, Module, Function, Seq}).
 
--spec delete_all_hooks() -> true. 
+-spec delete_all_hooks() -> true.
 
 %% @doc Primarily for testing / instrumentation
 delete_all_hooks() ->
     gen_server:call(ejabberd_hooks, {delete_all}).
 
 -spec get_handlers(atom(), binary() | global) -> [local_hook() | distributed_hook()].
-%% @doc Returns currently set handler for hook name 
+%% @doc Returns currently set handler for hook name
 get_handlers(Hookname, Host) ->
     gen_server:call(ejabberd_hooks, {get_handlers, Hookname, Host}).
 
@@ -233,6 +239,9 @@ handle_call({delete_all}, _From, State) ->
     Reply = ets:delete_all_objects(hooks),
     {reply, Reply, State};
 
+handle_call(stop, _From, State) ->
+    {stop, normal, ok, State};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -267,7 +276,7 @@ handle_delete(Hook, Host, El) ->
             ok;
         [] ->
             ok
-    end. 
+    end.
 
 %%----------------------------------------------------------------------
 %% Func: handle_cast/2

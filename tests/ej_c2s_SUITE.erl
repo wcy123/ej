@@ -132,7 +132,11 @@ all() ->
      test_get_env,
      {group, group0},
      hello_xmpp_server,
-     hell_xmpp_server
+     hell_xmpp_server,
+     hello_xmpp_server_unknown_host,
+     hello_xmpp_server_blacklist,
+     hello_xmpp_server_long_lang,
+     hello_xmpp_server_undefined_ip
     ].
 
 test_maybe_start(_Config) ->
@@ -153,22 +157,30 @@ start(Config)->
     translate:start(),
     {ok, RandomPid} = randoms:start(),
     {ok, PortGcPid } = ej_port_gc:start_link(),
+    {ok, HooksPid } = ejabberd_hooks:start_link(),
     [{ port_gc_pid, PortGcPid },
-     { random_pid, RandomPid }
+     { random_pid, RandomPid },
+     { hooks_pid, HooksPid }
      | Config].
 stop(Config)->
     PortGcPid = proplists:get_value(port_gc_pid, Config),
     RandomPid = proplists:get_value(random_pid, Config),
-
+    HooksPid = proplists:get_value(hooks_pid, Config),
     true = is_process_alive(RandomPid),
     randoms:stop(),
     false = is_process_alive(RandomPid),
 
     true = translate:stop(),
 
+    true = is_process_alive(HooksPid),
+    ok = ejabberd_hooks:stop(), timer:sleep(40),
+    false = is_process_alive(HooksPid),
+
     true = is_process_alive(PortGcPid),
     true = ej_port_gc:stop(PortGcPid),
     false = is_process_alive(PortGcPid).
+
+
 
 configure(Config) ->
     do_it([start, configure_start, configure_stop, stop],
@@ -228,6 +240,121 @@ hell_xmpp_server_1(Config) ->
     {_,_} = binary:match(Output, [<<"invalid-namespace">>]),
     Config.
 
+init_hello_xmpp_server_unknown_host(Config) ->
+    record_event(Config).
+end_hello_xmpp_server_unknown_host(Config) ->
+    replay_event(Config).
+
+hello_xmpp_server_unknown_host(Config) ->
+    do_it([start, configure_start, hello_xmpp_server_unknown_host_1, configure_stop, stop],
+          Config).
+
+hello_xmpp_server_unknown_host_1(Config) ->
+    Vars0 = ej_c2s:new(),
+    true = is_map(Vars0),
+    Vars00 = ej_c2s:add_bottom_module(dummy_sink,Vars0),
+    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, dummy_sink, Vars00),
+    true = is_map(Vars1),
+    Data = << "<stream:stream to='unknown_host' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0'>" >>,
+    Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink,Vars1),
+    true = is_map(Vars2),
+    {data, [_, Output]} = dummy_sink:get_output(Vars2),
+    {_,_} = binary:match(Output, [<<"host-unknown">>]),
+    Config.
+
+init_hello_xmpp_server_blacklist(Config) ->
+    record_event(Config).
+end_hello_xmpp_server_blacklist(Config) ->
+    replay_event(Config).
+
+hello_xmpp_server_blacklist(Config) ->
+    do_it([start, configure_start, hello_xmpp_server_blacklist_1, configure_stop, stop],
+          Config).
+
+hello_xmpp_server_blacklist_1(Config) ->
+    HooksPid = proplists:get_value(hooks_pid, Config),
+    ct:pal("process is alive ~p~n",[{whereis(ejabberd_hooks),
+                                     HooksPid
+                                     %is_process_alive(HooksPid)
+                                    }]),
+    ok = ejabberd_hooks:add(check_bl_c2s, fun (_,_,_) ->
+                                                  {true,testing, <<"just_for_testing">>}
+                                          end,
+                            0),
+    Vars0 = ej_c2s:new(),
+    true = is_map(Vars0),
+    Vars00 = ej_c2s:add_bottom_module(dummy_sink,Vars0),
+    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, dummy_sink, Vars00),
+    true = is_map(Vars1),
+    Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0'>" >>,
+    Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink,Vars1),
+    true = is_map(Vars2),
+    {data, [_, Output]} = dummy_sink:get_output(Vars2),
+    {_,_} = binary:match(Output, [<<"just_for_testing">>]),
+    Config.
+
+init_hello_xmpp_server_long_lang(Config) ->
+    record_event(Config).
+end_hello_xmpp_server_long_lang(Config) ->
+    replay_event(Config).
+
+hello_xmpp_server_long_lang(Config) ->
+    do_it([start, configure_start, hello_xmpp_server_long_lang_1, configure_stop, stop],
+          Config).
+
+hello_xmpp_server_long_lang_1(Config) ->
+    HooksPid = proplists:get_value(hooks_pid, Config),
+    ct:pal("process is alive ~p~n",[{whereis(ejabberd_hooks),
+                                     HooksPid
+                                     %is_process_alive(HooksPid)
+                                    }]),
+    ok = ejabberd_hooks:add(check_bl_c2s, fun (_,_,_) ->
+                                                  {true,testing, <<"just_for_testing">>}
+                                          end,
+                            0),
+    Vars0 = ej_c2s:new(),
+    true = is_map(Vars0),
+    Vars00 = ej_c2s:add_bottom_module(dummy_sink,Vars0),
+    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, dummy_sink, Vars00),
+    true = is_map(Vars1),
+    Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0' xml:lang='1234567890123456789012345678901234567890'>" >>,
+    Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink,Vars1),
+    true = is_map(Vars2),
+    {data, [_, Output]} = dummy_sink:get_output(Vars2),
+    {_,_} = binary:match(Output, [<<"just_for_testing">>]),
+    Config.
+
+init_hello_xmpp_server_undefined_ip(Config) ->
+    record_event(Config).
+end_hello_xmpp_server_undefined_ip(Config) ->
+    replay_event(Config).
+
+hello_xmpp_server_undefined_ip(Config) ->
+    do_it([start, configure_start, hello_xmpp_server_undefined_ip_1, configure_stop, stop],
+          Config).
+
+hello_xmpp_server_undefined_ip_1(Config) ->
+    HooksPid = proplists:get_value(hooks_pid, Config),
+    ct:pal("process is alive ~p~n",[{whereis(ejabberd_hooks),
+                                     HooksPid
+                                     %is_process_alive(HooksPid)
+                                    }]),
+    ok = ejabberd_hooks:add(check_bl_c2s, fun (_,_,_) ->
+                                                  {true,testing, <<"just_for_testing">>}
+                                          end,
+                            0),
+    Vars0 = ej_c2s:new(),
+    true = is_map(Vars0),
+    Vars00 = ej_c2s:add_bottom_module(dummy_sink,Vars0),
+    Vars01 = ej_vars:set(ip,undefined,ej_tcp_stub,Vars00),
+    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, dummy_sink, Vars01),
+    true = is_map(Vars1),
+    Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0' xml:lang='1234567890123456789012345678901234567890'>" >>,
+    Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink,Vars1),
+    true = is_map(Vars2),
+    {data, [_, Output]} = dummy_sink:get_output(Vars2),
+    {_,_} = binary:match(Output, [<<"just_for_testing">>]),
+    Config.
 
 
 %%%
