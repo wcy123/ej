@@ -49,3 +49,6 @@ XmppAddr.hrl
 ttb_last_config
 tests/Mnesia*
 variables-ct*
+Mnesia*
+log
+/tests/log
