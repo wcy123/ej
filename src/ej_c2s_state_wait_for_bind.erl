@@ -61,7 +61,7 @@ go_on_1(El, R, IQ,Vars) ->
             NewVars0 = ej_c2s:dl({send_xml, [Xml]}, ?MODULE, Vars),
             NewVars1 = ej_c2s_state:set_resource(R2, NewVars0),
             NewVars2 = ej_c2s_state:set_jid(JID, NewVars1),
-            ej_c2s_state:change_state(ej_c2s_state_wait_for_session, NewVars2)
+            ej_c2s_state:changea_state(ej_c2s_state_wait_for_session, NewVars2)
     end.
 
 resource_err(El, Vars) ->

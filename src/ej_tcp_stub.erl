@@ -21,7 +21,8 @@
          %% terminate/2,
          %% set_socket/2
          get_socket/1,
-         get_ip/1
+         get_ip/1,
+         get_conn_type/1
          %% @todo add set_ip
 
         ]).
@@ -47,5 +48,12 @@ get_socket(Vars) ->
 get_ip(Vars) ->
     ej_vars:get(ip, ?MODULE, Vars).
 
+
+%% todo
+change_shaper(_JID,Vars) ->
+    Vars.
+%% todo
+get_conn_type(_Vars) ->
+    c2s.
 %% get_socket(Vars) ->
 %%     ej_vars:get(socket, ?MODULE, Vars).

@@ -32,6 +32,8 @@
          set_resource/2,
          get_jid/1,
          set_jid/2,
+         get_access/1,
+         set_access/2,
          stream_mgmt_enabled/1
         ]).
 -spec new(Vars :: ej_vars:ej_vars()) -> ej_vars:ej_vars().
@@ -72,6 +74,10 @@ new(Vars) ->
                           resource => <<"">>,
                           lang => <<"">>,
                           jid => undefined,
+                          %% not so clear what the usage of access,
+                          %% refer to module acl.
+                          access => c2s,
+                          sid => {now(), ej_tcp_stub:get_socket(Vars)},
                           %% the stream id
                           stream_id => randoms:get_string()
                         },
@@ -112,6 +118,16 @@ get_jid(Vars) ->
     ej_vars:get(jid,?MODULE, Vars).
 set_jid(Value,Vars) ->
     ej_vars:set(jid, Value, ?MODULE, Vars).
+
+get_access(Vars) ->
+    ej_vars:get(access,?MODULE, Vars).
+set_access(Value,Vars) ->
+    ej_vars:set(access, Value, ?MODULE, Vars).
+
+get_sid(Vars) ->
+    ej_vars:get(sid,?MODULE, Vars).
+set_sid(Value,Vars) ->
+    ej_vars:set(sid, Value, ?MODULE, Vars).
 
 %% todo
 stream_mgmt_enabled(_Vars) ->
