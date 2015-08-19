@@ -24,6 +24,8 @@ start(_StartType, _StartArgs) ->
     %% again misleading name, start nothing but initialize tables. it
     %% must be started after reading parameters.
     cyrsasl:start(),
+    %% initialize command tables.
+    ejabberd_commands:init(),
     %% the main supervisor.
     {ok, Pid }  = ej_sup:start_link(),
     %% misleading name, start nothing, but initialization tables.

@@ -29,7 +29,7 @@
 
 new(Vars) ->
     ej_vars:add_module(?MODULE, #{
-                          a => 1
+
                          }, Vars).
 ul({xml_stream_element, El}, Vars) ->
     #xmlel{name = Name, attrs = Attrs, children = Els} = El,

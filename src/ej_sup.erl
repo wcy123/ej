@@ -89,6 +89,14 @@ init([]) ->
       type => supervisor,
       modules => [ etcp_listener_sup ]
      },
+    SM = #{
+      id => ejabberd_sm,
+      start => { ejabberd_sm, start_link, [] },
+      restart => permanent,
+      shutdown => 1000,
+      type => worker,
+      modules => [ ejabberd_sm ]
+     },
     SupFlags = #{strategy => one_for_one,
                  intensity => 5,
                  period => 1},
@@ -100,7 +108,8 @@ init([]) ->
                    PortGC,
                    EventManager,
                    C2SMainLoop,
-                   C2SListener
+                   C2SListener,
+                   SM
                   ]
                 })}.
 

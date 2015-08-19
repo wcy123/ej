@@ -123,3 +123,10 @@ t6() ->
     ct:pal(default, 99,"~p~n",[{Output0, Vars3}]),
     {data, [Output]} = Output0,
     {_,_} = binary:match(Output, [<<"success">>]).
+
+
+go() ->
+    setup_env(),
+    application:ensure_all_started(ej),
+    ej_viewer_pid(),
+    ej_c2s_SUITE:hello_xmpp_server_1([]).

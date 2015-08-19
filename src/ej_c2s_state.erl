@@ -30,6 +30,8 @@
          set_server/2,
          get_resource/1,
          set_resource/2,
+         get_jid/1,
+         set_jid/2,
          stream_mgmt_enabled/1
         ]).
 -spec new(Vars :: ej_vars:ej_vars()) -> ej_vars:ej_vars().
@@ -39,7 +41,8 @@ new(Vars) ->
                  [
                   %% all states go here
                   ej_c2s_state_wait_for_stream,
-                  ej_c2s_state_wait_for_feature_request
+                  ej_c2s_state_wait_for_feature_request,
+                  ej_c2s_state_wait_for_bind
                  ],
                  Vars#{
                    %% initialization of each of the states
@@ -52,6 +55,11 @@ new(Vars) ->
                      ul_entity => undefined,
                      detail_level => 9,
                      dl_entity => ?MODULE
+                    },
+                   ej_c2s_state_wait_for_bind => #{
+                     ul_entity => undefined,
+                     detail_level => 9,
+                     dl_entity => ?MODULE
                     }
                   }),
     ej_vars:add_module(?MODULE,
@@ -61,8 +69,9 @@ new(Vars) ->
                           %% server name
                           server => <<"">>,
                           user => <<"">>,
-                          lang => <<"">>,
                           resource => <<"">>,
+                          lang => <<"">>,
+                          jid => undefined,
                           %% the stream id
                           stream_id => randoms:get_string()
                         },
@@ -98,6 +107,11 @@ get_resource(Vars) ->
     ej_vars:get(resource,?MODULE, Vars).
 set_resource(Value,Vars) ->
     ej_vars:set(resource, Value, ?MODULE, Vars).
+
+get_jid(Vars) ->
+    ej_vars:get(jid,?MODULE, Vars).
+set_jid(Value,Vars) ->
+    ej_vars:set(jid, Value, ?MODULE, Vars).
 
 %% todo
 stream_mgmt_enabled(_Vars) ->
