@@ -94,7 +94,7 @@ element_to_binary({xml_stream_end, Name}) ->
     <<
       $<, $/, Name/binary, $>
     >>;
-element_to_binary({xml_cdata, CData}) ->
+element_to_binary({xmlcdata, CData}) ->
     crypt(CData);
 element_to_binary(#xmlel{name = Name, attrs = Attrs, children = Els}) ->
     case Els of

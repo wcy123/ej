@@ -37,6 +37,8 @@
 new(Vars) ->
     ej_vars:add_module(?MODULE, #{
                           server => <<"">>,
+                          authenticated => false,
+                          sasl_state => undefined,
                           output => undefined
                          }, Vars).
 ul({xml_stream_start, _Name, Attrs}, Vars) ->
@@ -72,11 +74,72 @@ go_on_2(Lang, Server, Attrs, Vars) ->
     Version = xml:get_attr_s(<<"version">>, Attrs),
     case Version of
         <<"1.0">> ->
-            error({todo,Lang,Server,Attrs,Vars}),
-            Vars;
+            go_on_3(Lang,Server,Attrs,Vars);
         _ ->
             not_version_1_0_err(Vars)
     end.
+
+go_on_3(Lang,Server,Attrs,Vars) ->
+    case authenticated(Vars) of
+        false ->
+            go_on_not_authenticated(Server,Vars);
+        true ->
+            error({not_implemented, Attrs, Lang})
+    end.
+
+go_on_not_authenticated(Server,Vars) ->
+    DefaultLang = ?MYLANG,
+    SASLState =
+        cyrsasl:server_new(
+          <<"jabber">>, Server, <<"">>, [],
+          fun(U) ->
+                  ejabberd_auth:get_password_with_authmodule(
+                    U, Server)
+          end,
+          fun(U, P) ->
+                  ejabberd_auth:check_password_with_authmodule(
+                    U, Server, P)
+          end,
+          fun(U, P, D, DG) ->
+                  ejabberd_auth:check_password_with_authmodule(
+                    U, Server, P, D, DG)
+          end),
+    Ms = lists:map(fun (S) ->
+                           #xmlel{name = <<"mechanism">>,
+                                  attrs = [],
+                                  children = [{xmlcdata, S}]}
+                   end,
+                   cyrsasl:listmech(Server)),
+    Mechs = [#xmlel{name = <<"mechanisms">>,
+                    attrs = [{<<"xmlns">>, ?NS_SASL}],
+                    children = Ms}],
+    CompressFeature = [],
+    TLSFeature  = [],
+    StreamFeatures1 = TLSFeature ++ CompressFeature ++ Mechs,
+    StreamFeatures = ejabberd_hooks:run_fold(c2s_stream_features,
+                                             Server, StreamFeatures1, [Server]),
+    Version = <<"1.0">>,
+    NewVars0 = set_sasl_state(SASLState,Vars),
+    NewVars1 = ej_c2s:dl(
+                {send_xml,
+                 [xml_1_0,
+                  { xml_stream_start,
+                    %% name =
+                    <<"stream:stream">>,
+                    %% attrs =
+                    [{ <<"versiaon">>, Version},
+                     {<<"xml:lang">>, DefaultLang},
+                     {<<"xmlns">>, <<"jabber:client">>},
+                     {<<"xmlns:stream">>, <<"http://etherx.jabber.org/streams">>},
+                     {<<"id">>, ej_c2s_state:get_stream_id(Vars)},
+                     {<<"from">>, Server} ]},
+                  #xmlel{ name = <<"stream:features">>,
+                          attrs = [],
+                          children = StreamFeatures }
+                 ]},
+                ?MODULE,
+                NewVars0),
+    ej_c2s_state:change_state(ej_c2s_state_wait_for_feature_request,NewVars1).
 
 get_server(Attrs, Vars) ->
     case ej_vars:get(server, ?MODULE, Vars) of
@@ -205,3 +268,14 @@ not_version_1_0_err(Vars) ->
 is_ip_blacklisted(undefined, _Lang) -> false;
 is_ip_blacklisted({IP, _Port}, Lang) ->
     ejabberd_hooks:run_fold(check_bl_c2s, false, [IP, Lang]).
+
+authenticated(Vars) ->
+    ej_vars:get(authenticated, ?MODULE, Vars).
+set_authenticated(Value, Vars) ->
+    ej_vars:set(authenticated, Value, ?MODULE, Vars).
+
+
+sasl_state(Vars) ->
+    ej_vars:get(sasl_state,?MODULE, Vars).
+set_sasl_state(Value,Vars) ->
+    ej_vars:set(sasl_state, Value, ?MODULE, Vars).

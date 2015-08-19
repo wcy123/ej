@@ -649,7 +649,7 @@ create_delay_tag(TimeStamp, FromJID, Desc) when is_tuple(FromJID) ->
     Stamp = now_to_utc_string(TimeStamp, 3),
     Children = case Desc of
 		 <<"">> -> [];
-		 _ -> [{xml_cdata, Desc}]
+		 _ -> [{xmlcdata, Desc}]
 	       end,
     #xmlel{name = <<"delay">>,
 	   attrs =

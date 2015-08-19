@@ -193,6 +193,7 @@ configure_start(Config) ->
               filename:join([DataDir,
                              "ejabberd.yml"])),
     ejabberd_config:start(),
+    cyrsasl:start(),
     Config.
 configure_stop(Config) ->
     ejabberd_config:stop(),
@@ -353,8 +354,8 @@ hello_xmpp_server_undefined_ip_1(Config) ->
     Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0' xml:lang='1234567890123456789012345678901234567890'>" >>,
     Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink,Vars1),
     true = is_map(Vars2),
-    {data, [_, Output]} = dummy_sink:get_output(Vars2),
-    {_,_} = binary:match(Output, [<<"just_for_testing">>]),
+    {data, [_, _, Output]} = dummy_sink:get_output(Vars2),
+    {_,_} = binary:match(Output, [<<"mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl">>]),
     Config.
 
 init_hello_xmpp_server_wrong_version(Config) ->

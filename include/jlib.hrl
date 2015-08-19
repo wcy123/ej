@@ -134,7 +134,7 @@
 		    #xmlel{name = <<"text">>,
 			   attrs = [{<<"xmlns">>, ?NS_STANZAS}],
 			   children =
-			       [{xml_cdata,
+			       [{xmlcdata,
 				 translate:translate(Lang, Text)}]}]}).
 
 -define(ERRT_BAD_FORMAT(Lang, Text),
@@ -240,7 +240,7 @@
 	       children =
 		   [#xmlel{name = Condition,
 			   attrs = [{<<"xmlns">>, ?NS_STREAMS}],
-			   children = [{xml_cdata, Cdata}]}]}).
+			   children = [{xmlcdata, Cdata}]}]}).
 
 -define(SERR_BAD_FORMAT,
 	?STREAM_ERROR(<<"bad-format">>, <<"">>)).
@@ -319,13 +319,13 @@
 	       children =
 		   [#xmlel{name = Condition,
 			   attrs = [{<<"xmlns">>, ?NS_STREAMS}],
-			   children = [{xml_cdata, Cdata}]},
+			   children = [{xmlcdata, Cdata}]},
 		    #xmlel{name = <<"text">>,
 			   attrs =
 			       [{<<"xml:lang">>, Lang},
 				{<<"xmlns">>, ?NS_STREAMS}],
 			   children =
-			       [{xml_cdata,
+			       [{xmlcdata,
 				 translate:translate(Lang, Text)}]}]}).
 
 -define(SERRT_BAD_FORMAT(Lang, Text),
@@ -500,6 +500,6 @@
 
 -record(xmlelement, {name = ""     :: string(),
                      attrs = []    :: [{string(), string()}],
-                     children = [] :: [{xml_cdata, iodata()} | xmlelement()]}).
+                     children = [] :: [{xmlcdata, iodata()} | xmlelement()]}).
 
 -type xmlelement() :: #xmlelement{}.
