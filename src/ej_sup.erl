@@ -40,6 +40,16 @@ init([]) ->
       type => worker,
       modules => [ randoms ]
      },
+    Random = #{
+      id => randoms,
+      start => { randoms, start, [] },
+      restart => permanent,
+      shutdown => 1000,
+      type => worker,
+      modules => [ randoms ]
+     },
+
+
     PortGC = #{
       id => ej_port_gc,
       start => { ej_port_gc, start_link, [] },

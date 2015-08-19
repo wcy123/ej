@@ -214,7 +214,11 @@ hello_xmpp_server(Config) ->
           Config).
 
 hello_xmpp_server_1(Config) ->
-    {atomic,ok} = ejabberd_auth:try_register(<<"test1">>,<<"localhost">>,<<"123">>),
+    case  ejabberd_auth:try_register(<<"test1">>,<<"localhost">>,<<"123">>) of
+        {atomic,ok} -> ok;
+        {atomic,exists} -> ok
+    end,
+
 
     Vars0 = ej_c2s:new(),
     true = is_map(Vars0),
@@ -242,6 +246,11 @@ hello_xmpp_server_1(Config) ->
     Bind = << "stream:features><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'/>" >>,
     {data, [Output3]} = Output2,
     {_,_} = binary:match(Output3, [Bind]),
+
+
+    Data3 = << "<iq type=\"set\" id=\"1\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" /></iq>" >>,
+    Vars6 = ej_vars:set(output, <<"no_output">>, dummy_sink, Vars5),
+    Vars7 = ej_c2s:ul({tcp, 1,  Data3}, dummy_sink, Vars6),
 
     Config.
 

@@ -24,7 +24,14 @@ start(_StartType, _StartArgs) ->
     %% again misleading name, start nothing but initialize tables. it
     %% must be started after reading parameters.
     cyrsasl:start(),
-    ej_sup:start_link().
+    %% the main supervisor.
+    {ok, Pid }  = ej_sup:start_link(),
+    %% misleading name, start nothing, but initialization tables.
+    %% ejabberd_hooks is stared by the supervisor, but ejabberd_auth
+    %% run some hooks, so it must be started after ej_sup.
+    ejabberd_auth:start(),
+    {ok, Pid}.
+
 
 
 stop(_State) ->
