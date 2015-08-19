@@ -35,11 +35,12 @@ init_per_suite(Config) ->
     %% so that we have to load the application
     IsLoaded = is_application_loaded(ej),
     if not(IsLoaded) ->
-            ok = application:load(ej),
+            ok = application:load(ej);
             %% see ejabberd_config:set_opts failed on line 627
-            ok = application:start(mnesia);
        true -> ok
     end,
+    ok = mnesia:create_schema([node()]),
+    ok = application:start(mnesia),
     Config.
 
 %%--------------------------------------------------------------------
@@ -194,6 +195,7 @@ configure_start(Config) ->
                              "ejabberd.yml"])),
     ejabberd_config:start(),
     cyrsasl:start(),
+    ejabberd_auth:start(),
     Config.
 configure_stop(Config) ->
     ejabberd_config:stop(),
@@ -209,6 +211,8 @@ hello_xmpp_server(Config) ->
           Config).
 
 hello_xmpp_server_1(Config) ->
+    {atomic,ok} = ejabberd_auth:try_register(<<"test1">>,<<"localhost">>,<<"123">>),
+
     Vars0 = ej_c2s:new(),
     true = is_map(Vars0),
     Vars00 = ej_c2s:add_bottom_module(dummy_sink,Vars0),
@@ -217,6 +221,14 @@ hello_xmpp_server_1(Config) ->
     Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0'>" >>,
     Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink, Vars1),
     true = is_map(Vars2),
+    <<"localhost">> = ej_c2s_state:get_server(Vars2),
+
+
+    Data2 = <<"<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN' xmlns:ga='http://www.google.com/talk/protocol/auth' ga:client-uses-full-bind-result='true'>AHRlc3QxADEyMw==</auth>">>,
+    Vars3 = ej_c2s:ul({tcp, 1,  Data2}, dummy_sink, Vars2),
+    Output0 = dummy_sink:get_output(Vars3),
+    {data, [Output]} = Output0,
+    {_,_} = binary:match(Output, [<<"success">>]),
     Config.
 
 init_hell_xmpp_server(Config) ->

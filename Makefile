@@ -19,4 +19,4 @@ test: compile
 
 test_x: compile
 	ct_run -cover cover.spec -cover_stop false   -pa ebin -logdir /var/www/html/log -dir tests \
-	-suite ej_c2s_SUITE -case hello_xmpp_server_wrong_version
+	-suite ej_c2s_SUITE -case hello_xmpp_server

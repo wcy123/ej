@@ -15,7 +15,11 @@
 %% API
 -export([
          new/1,
-         ul/2
+         ul/2,
+         get_sasl_state/1,
+         set_sasl_state/2,
+         set_authenticated/2,
+         set_auth_module/2
         ]).
 
 %%% MACRORS
@@ -36,9 +40,9 @@
 
 new(Vars) ->
     ej_vars:add_module(?MODULE, #{
-                          server => <<"">>,
                           authenticated => false,
                           sasl_state => undefined,
+                          auth_module => undefined,
                           output => undefined
                          }, Vars).
 ul({xml_stream_start, _Name, Attrs}, Vars) ->
@@ -80,7 +84,7 @@ go_on_2(Lang, Server, Attrs, Vars) ->
     end.
 
 go_on_3(Lang,Server,Attrs,Vars) ->
-    case authenticated(Vars) of
+    case get_authenticated(Vars) of
         false ->
             go_on_not_authenticated(Server,Vars);
         true ->
@@ -119,9 +123,10 @@ go_on_not_authenticated(Server,Vars) ->
     StreamFeatures = ejabberd_hooks:run_fold(c2s_stream_features,
                                              Server, StreamFeatures1, [Server]),
     Version = <<"1.0">>,
-    NewVars0 = set_sasl_state(SASLState,Vars),
-    NewVars1 = ej_c2s:dl(
-                {send_xml,
+    NewVars0 = set_sasl_state(SASLState, Vars),
+    NewVars1 = ej_c2s_state:set_server(Server, NewVars0),
+    NewVars2 = ej_c2s:dl(
+                 {send_xml,
                  [xml_1_0,
                   { xml_stream_start,
                     %% name =
@@ -137,12 +142,12 @@ go_on_not_authenticated(Server,Vars) ->
                           attrs = [],
                           children = StreamFeatures }
                  ]},
-                ?MODULE,
-                NewVars0),
-    ej_c2s_state:change_state(ej_c2s_state_wait_for_feature_request,NewVars1).
+                 ?MODULE,
+                 NewVars1),
+    ej_c2s_state:change_state(ej_c2s_state_wait_for_feature_request,NewVars2).
 
 get_server(Attrs, Vars) ->
-    case ej_vars:get(server, ?MODULE, Vars) of
+    case ej_c2s_state:get_server(Vars) of
         <<"">> ->
             jlib:nameprep(xml:get_attr_s(<<"to">>, Attrs));
         S -> S
@@ -269,13 +274,18 @@ is_ip_blacklisted(undefined, _Lang) -> false;
 is_ip_blacklisted({IP, _Port}, Lang) ->
     ejabberd_hooks:run_fold(check_bl_c2s, false, [IP, Lang]).
 
-authenticated(Vars) ->
+get_authenticated(Vars) ->
     ej_vars:get(authenticated, ?MODULE, Vars).
 set_authenticated(Value, Vars) ->
     ej_vars:set(authenticated, Value, ?MODULE, Vars).
 
 
-sasl_state(Vars) ->
+get_sasl_state(Vars) ->
     ej_vars:get(sasl_state,?MODULE, Vars).
 set_sasl_state(Value,Vars) ->
     ej_vars:set(sasl_state, Value, ?MODULE, Vars).
+
+get_auth_module(Vars) ->
+    ej_vars:get(auth_module,?MODULE, Vars).
+set_auth_module(Value,Vars) ->
+    ej_vars:set(auth_module, Value, ?MODULE, Vars).

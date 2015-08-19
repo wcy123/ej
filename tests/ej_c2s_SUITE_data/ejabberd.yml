@@ -243,7 +243,7 @@ host_config:
 ##
 ## Store the plain passwords or hashed for SCRAM:
 ## auth_password_format: plain
-      auth_password_format: scram
+      auth_password_format: plain
 
 ##
 ## Define the FQDN if ejabberd doesn't detect it:

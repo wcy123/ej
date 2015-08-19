@@ -8,7 +8,8 @@
          %% app_start_sequence/1, get_so_path/1
          %% is_directory/1,
          code_module_dir/2,
-         term_to_string/1
+         term_to_string/1,
+         sizeof/1
         ]).
 -include_lib("kernel/include/file.hrl").
 %% private export
@@ -88,3 +89,6 @@ term_to_string(Term) ->
         {'EXIT', _} -> io_lib:format("~p", [Term]);
         GoodString  -> GoodString
     end.
+
+sizeof(Term) ->
+    byte_size(term_to_binary(Term)).

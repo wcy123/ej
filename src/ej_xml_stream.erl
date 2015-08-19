@@ -40,7 +40,7 @@ ul({data, Data}, Vars) ->
     et:trace_me(?DETAIL_LEVEL, expal, ?MODULE, ok ,
                 [{xml, ej_vars:get(?MODULE,NewVars) },
                  {events, Events}]),
-    lists:foldl(fun report_event/2, Vars, Events).
+    lists:foldl(fun report_event/2, NewVars, Events).
 
 
 report_event(E, Vars) when is_map(Vars) ->
@@ -137,10 +137,11 @@ parse(Str,Vars) ->
     Size = ej_vars:get(size,?MODULE,Vars),
     MaxSize = ej_vars:get(maxsize,?MODULE,Vars),
     Res = port_control(Port, ?PARSE_COMMAND, Str),
+    XmlRawData = binary_to_term(Res),
     { NewStack, NewSize, Events } =
         lists:foldl(fun parse_data/2,
                     {Stack, Size + StrSize, []},
-                    binary_to_term(Res)),
+                    XmlRawData),
     NewSize > MaxSize andalso
         erlang:error( {xml_stream_error, <<"XML stanza is too big">>} ),
     Vars0 = ej_vars:set(stack, NewStack,?MODULE, Vars),
@@ -198,7 +199,7 @@ process_data_xml_end(Name, {Stack,Events}) ->
             %% here is strange, c2s.erl only accept mixed type, not consistent.
             %% in order to minimize modification, here send NewEl directly.
             %%    NewEvents = [{xml_stream_element, NewEl} | Events],
-            NewEvents = [NewEl | Events],
+            NewEvents = [{xml_stream_element,NewEl} | Events],
             NewStack = [xml_stream_start],
             { NewStack, NewEvents };
         [#xmlel{name = Name, attrs = Attrs, children = Els},
