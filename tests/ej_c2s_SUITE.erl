@@ -140,7 +140,8 @@ all() ->
      hello_xmpp_server_undefined_ip,
      hello_xmpp_server_wrong_version,
      hello_xmpp_server_wrong_password,
-     hello_xmpp_server_unknown_ns
+     hello_xmpp_server_unknown_ns,
+     hello_xmpp_server_unauth_iq
     ].
 
 test_maybe_start(_Config) ->
@@ -469,6 +470,42 @@ hello_xmpp_server_unknown_ns_1(Config) ->
     Vars5 = ej_c2s:ul({tcp, 1,  Data2}, dummy_sink, Vars4),
     <<"no_output">> = dummy_sink:get_output(Vars5),
     Config.
+
+
+
+init_hello_xmpp_server_unauth_iq(Config) ->
+    record_event(Config).
+end_hello_xmpp_server_unauth_iq(Config) ->
+    replay_event(Config).
+
+hello_xmpp_server_unauth_iq(Config) ->
+    do_it([start, configure_start, hello_xmpp_server_unauth_iq_1, configure_stop, stop],
+          Config).
+
+hello_xmpp_server_unauth_iq_1(Config) ->
+    case  ejabberd_auth:try_register(<<"test1">>,<<"localhost">>,<<"123">>) of
+        {atomic,ok} -> ok;
+        {atomic,exists} -> ok
+    end,
+    Vars0 = ej_c2s:new(),
+    true = is_map(Vars0),
+    Vars00 = ej_c2s:add_bottom_module(dummy_sink,Vars0),
+    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, dummy_sink, Vars00),
+    true = is_map(Vars1),
+    Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0'>" >>,
+    Vars2 = ej_vars:set(output, <<"no_output">>, dummy_sink, Vars1),
+    Vars3 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink, Vars2),
+    true = is_map(Vars3),
+    <<"localhost">> = ej_c2s_state:get_server(Vars3),
+
+
+    Data2 = << "<iq type='get' id='1'><bind xmlns='urn:ietf:params:xml:ns:xmpp-bind' /></iq>" >>,
+    Vars4 = ej_vars:set(output, <<"no_output">>, dummy_sink, Vars3),
+    Vars5 = ej_c2s:ul({tcp, 1,  Data2}, dummy_sink, Vars4),
+    {data, [Output]} = dummy_sink:get_output(Vars5),
+    {_,_} = binary:match(Output, [<<"service-unavailable">>]),
+    Config.
+
 
 
 %%%
