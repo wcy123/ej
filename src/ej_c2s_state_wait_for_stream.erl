@@ -10,6 +10,7 @@
 -include("ejabberd.hrl").
 -include("logger.hrl").
 -include("jlib.hrl").
+-include("sp_cmd.hrl").
 
 
 %% API

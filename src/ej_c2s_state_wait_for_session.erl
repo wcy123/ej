@@ -3,6 +3,7 @@
 -include("logger.hrl").
 -include("jlib.hrl").
 -include("mod_privacy.hrl").
+-include("sp_cmd.hrl").
 -export([
          new/1,
          ul/2

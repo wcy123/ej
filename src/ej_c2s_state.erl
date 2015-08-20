@@ -7,7 +7,7 @@
 %%% Created :  4 Aug 2015 by chunywan <wcy123@gmail.com>
 %%%-------------------------------------------------------------------
 -module(ej_c2s_state).
-
+-include("sp_cmd.hrl").
 
 
 %% API
@@ -53,11 +53,12 @@ new(Vars) ->
       dl_entity => ?MODULE
      },
     States = [
-                  %% all states go here
-                  ej_c2s_state_wait_for_stream,
-                  ej_c2s_state_wait_for_feature_request,
-                  ej_c2s_state_wait_for_bind,
-                  ej_c2s_state_wait_for_session
+              %% all states go here
+              ej_c2s_state_wait_for_stream,
+              ej_c2s_state_wait_for_feature_request,
+              ej_c2s_state_wait_for_bind,
+              ej_c2s_state_wait_for_session,
+              ej_c2s_state_session_established
              ],
     NewVars0 = lists:foldl(fun (State, V) -> maps:put(State, M, V) end, Vars, States),
     NewVars1 = ej_vars:new(States, NewVars0),

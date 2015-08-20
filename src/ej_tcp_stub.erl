@@ -7,7 +7,7 @@
 %%% Created :  4 Aug 2015 by chunywan <wcy123@gmail.com>
 %%%-------------------------------------------------------------------
 -module(ej_tcp_stub).
-
+-include("sp_cmd.hrl").
 
 
 %% API
@@ -26,6 +26,7 @@
          %% @todo add set_ip
          change_shaper/2
         ]).
+
 new(Vars) ->
     ej_vars:add_module(?MODULE,
                        #{
@@ -33,12 +34,12 @@ new(Vars) ->
                           ip => {{127,0,0,1}, {12345} }
                         },
                        Vars).
-ul({tcp, Socket, Data}, Vars) ->
-    NewVars = set_socket(Socket,Vars),
-    ej_c2s:ul({data, Data}, ?MODULE, NewVars).
-dl({data, Data}, Vars) ->
-    ej_c2s:dl({data,Data}, ?MODULE, Vars).
 
+ul(#sp_cmd{cmd=tcp, args = {Socket, _} } = Cmd, Vars) ->
+    NewVars = set_socket(Socket,Vars),
+    ej_c2s:ul(Cmd, ?MODULE, NewVars).
+dl(#sp_cmd{cmd=tcp} = Cmd, Vars) ->
+    ej_c2s:dl(Cmd, ?MODULE, Vars).
 
 set_socket(Socket, Vars) ->
     ej_vars:set(socket, Socket, ?MODULE, Vars).

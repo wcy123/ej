@@ -15,6 +15,7 @@
          %% set/3,
          set/4
         ]).
+-export_type([ej_module/0,ej_vars/0, ej_module_vars/0]).
 -type ej_module() :: atom().
 -type ej_vars() :: #{ ej_module() => ej_module_vars() }.
 -type ej_module_vars() :: #{ atom() => term() }.

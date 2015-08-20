@@ -7,6 +7,7 @@
 %%% Created :  4 Aug 2015 by chunywan <wcy123@gmail.com>
 %%%-------------------------------------------------------------------
 -module(ej_xml_stream).
+-include("sp_cmd.hrl").
 -define(DETAIL_LEVEL,99).
 %% API
 %% callbacks for upper layer

@@ -9,9 +9,11 @@ $(DEPSOLVER_PLT):
 
 compile:
 	rebar compile skip_deps=true
-dialyzer:
+dialyzer: $(DEPSOLVER_PLT)
 	dialyzer --fullpath  --plt $(DEPSOLVER_PLT) -pa deps/p1_xml/ebin -pa deps/lager/ebin -Wrace_conditions --src src
 
+log/%.dialyzer: src/%.erl
+	dialyzer --fullpath  --plt $(DEPSOLVER_PLT) -pa deps/p1_xml/ebin -pa deps/lager/ebin -Wrace_conditions -o $@ $< && cat $@
 # -no_auto_compile
 # -verbosity 99
 test: compile
