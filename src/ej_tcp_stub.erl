@@ -22,9 +22,9 @@
          %% set_socket/2
          get_socket/1,
          get_ip/1,
-         get_conn_type/1
+         get_conn_type/1,
          %% @todo add set_ip
-
+         change_shaper/2
         ]).
 new(Vars) ->
     ej_vars:add_module(?MODULE,

@@ -36,36 +36,31 @@
          set_sid/2,
          get_access/1,
          set_access/2,
+         get_pres_f/1,
+         set_pres_f/2,
+         get_pres_t/1,
+         set_pres_t/2,
+         get_privacy_list/1,
+         set_privacy_list/2,
          stream_mgmt_enabled/1
         ]).
 -spec new(Vars :: ej_vars:ej_vars()) -> ej_vars:ej_vars().
 new(Vars) ->
     %% maybe I need to initialize all the states here.
-    NewVars1 = ej_vars:new(
-                 [
+    M = #{
+      ul_entity => undefined,
+      detail_level => 9,
+      dl_entity => ?MODULE
+     },
+    States = [
                   %% all states go here
                   ej_c2s_state_wait_for_stream,
                   ej_c2s_state_wait_for_feature_request,
-                  ej_c2s_state_wait_for_bind
-                 ],
-                 Vars#{
-                   %% initialization of each of the states
-                   ej_c2s_state_wait_for_stream => #{
-                     ul_entity => undefined,
-                     detail_level => 9,
-                     dl_entity => ?MODULE
-                    },
-                   ej_c2s_state_wait_for_feature_request => #{
-                     ul_entity => undefined,
-                     detail_level => 9,
-                     dl_entity => ?MODULE
-                    },
-                   ej_c2s_state_wait_for_bind => #{
-                     ul_entity => undefined,
-                     detail_level => 9,
-                     dl_entity => ?MODULE
-                    }
-                  }),
+                  ej_c2s_state_wait_for_bind,
+                  ej_c2s_state_wait_for_session
+             ],
+    NewVars0 = lists:foldl(fun (State, V) -> maps:put(State, M, V) end, Vars, States),
+    NewVars1 = ej_vars:new(States, NewVars0),
     ej_vars:add_module(?MODULE,
                        #{
                           %% the initial state
@@ -80,6 +75,9 @@ new(Vars) ->
                           %% refer to module acl.
                           access => c2s,
                           sid => undefined,
+                          pres_f => undefined,
+                          pres_t => undefined,
+                          privacy_list => undefined,
                           %% the stream id
                           stream_id => randoms:get_string()
                         },
@@ -130,6 +128,19 @@ get_sid(Vars) ->
     ej_vars:get(sid,?MODULE, Vars).
 set_sid(Value,Vars) ->
     ej_vars:set(sid, Value, ?MODULE, Vars).
+
+get_pres_f(Vars) ->
+    ej_vars:get(pres_f,?MODULE, Vars).
+set_pres_f(Value,Vars) ->
+    ej_vars:set(pres_f, Value, ?MODULE, Vars).
+get_pres_t(Vars) ->
+    ej_vars:get(pres_t,?MODULE, Vars).
+set_pres_t(Value,Vars) ->
+    ej_vars:set(pres_t, Value, ?MODULE, Vars).
+get_privacy_list(Vars) ->
+    ej_vars:get(privacy_list,?MODULE, Vars).
+set_privacy_list(Value,Vars) ->
+    ej_vars:set(privacy_list, Value, ?MODULE, Vars).
 
 %% todo
 stream_mgmt_enabled(_Vars) ->

@@ -51,7 +51,7 @@ go_on_allow(El,Vars) ->
     NewVars1 = ej_tcp_stub:change_shaper(JID,NewVars0),
     {Fs, Ts} = ejabberd_hooks:run_fold(
                  roster_get_subscription_lists,
-                 Server,d,
+                 Server,
                  {[], []},
                  [U, Server]),
     LJID = jlib:jid_tolower(jlib:jid_remove_resource(JID)),
@@ -70,7 +70,7 @@ go_on_allow(El,Vars) ->
     NewVars2 = ej_c2s_state:set_pres_f(?SETS:from_list(Fs1), NewVars1),
     NewVars3 = ej_c2s_state:set_pres_t(?SETS:from_list(Ts1), NewVars2),
     NewVars4 = ej_c2s_state:set_privacy_list(PrivList, NewVars3),
-    ej_c2s_state:changea_state(ej_c2s_state_wait_for_session, NewVars4).
+    ej_c2s_state:change_state(ej_c2s_state_session_established, NewVars4).
 
 
 go_on_not_allow(El,Vars) ->
@@ -81,7 +81,8 @@ go_on_not_allow(El,Vars) ->
     ?INFO_MSG("(~w) Forbidden session for ~s", [Socket, jlib:jid_to_string(JID)]),
     Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
     NewVars0 = ej_c2s:dl({send_xml, [Err]}, ?MODULE, Vars),
-    ej_c2s_state:changea_state(ej_c2s_state_wait_for_session, NewVars0).
+    %% this has no effect, stay in the same state.
+    ej_c2s_state:change_state(ej_c2s_state_wait_for_session, NewVars0).
 
 %% update_num_stanzas_in(#state{mgmt_state = active} = StateData, El) ->
 %%     NewNum = case {is_stanza(El), StateData#state.mgmt_stanzas_in} of

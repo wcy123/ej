@@ -19,6 +19,7 @@
          get_sasl_state/1,
          set_sasl_state/2,
          set_authenticated/2,
+         get_auth_module/1,
          set_auth_module/2
         ]).
 

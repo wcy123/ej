@@ -201,6 +201,7 @@ configure_start(Config) ->
     ejabberd_auth:start(),
     ejabberd_commands:init(),
     ejabberd_sm:start_link(),
+    acl:start(),
     Config.
 configure_stop(Config) ->
     ejabberd_config:stop(),
@@ -250,10 +251,20 @@ hello_xmpp_server_1(Config) ->
     {_,_} = binary:match(Output3, [Bind]),
 
 
+    %% bind
+
     Data3 = << "<iq type=\"set\" id=\"1\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" /></iq>" >>,
     Vars6 = ej_vars:set(output, <<"no_output">>, dummy_sink, Vars5),
     Vars7 = ej_c2s:ul({tcp, 1,  Data3}, dummy_sink, Vars6),
     ej_c2s_state_wait_for_session = ej_vars:get(ul_entity, ej_c2s_state, Vars7),
+
+    %% sessoin
+    Data4 = << "<iq type=\"set\" id=\"2\"><session xmlns=\"urn:ietf:params:xml:ns:xmpp-session\" /></iq>" >>,
+
+    Vars8 = ej_vars:set(output, <<"no_output">>, dummy_sink, Vars7),
+    Vars9 = ej_c2s:ul({tcp, 1,  Data4}, dummy_sink, Vars8),
+    ej_c2s_state_session_established = ej_vars:get(ul_entity, ej_c2s_state, Vars9),
+
 
     [ {var, Vars7 } | Config].
 

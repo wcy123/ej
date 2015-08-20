@@ -32,6 +32,9 @@ start(_StartType, _StartArgs) ->
     %% ejabberd_hooks is stared by the supervisor, but ejabberd_auth
     %% run some hooks, so it must be started after ej_sup.
     ejabberd_auth:start(),
+    acl:start(),
+    ejabberd_commands:init(),
+    ejabberd_sm:start_link(),
     {ok, Pid}.
 
 
