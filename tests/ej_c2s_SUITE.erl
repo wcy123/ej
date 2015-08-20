@@ -255,7 +255,7 @@ hello_xmpp_server_1(Config) ->
     Vars7 = ej_c2s:ul({tcp, 1,  Data3}, dummy_sink, Vars6),
     ej_c2s_state_wait_for_session = ej_vars:get(ul_entity, ej_c2s_state, Vars7),
 
-    Config.
+    [ {var, Vars7 } | Config].
 
 init_hell_xmpp_server(Config) ->
     record_event(Config).

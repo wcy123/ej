@@ -29,7 +29,7 @@ loop() ->
         stop ->
             ok; %% exit the loop
         {'EXIT', From, Reason} ->
-            erlang:error({what,{From,Reason}});
+            erlang:error({what,{From,Reason, self()}});
         E ->
             erlang:error(E)
     end.

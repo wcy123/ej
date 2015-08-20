@@ -32,6 +32,8 @@
          set_resource/2,
          get_jid/1,
          set_jid/2,
+         get_sid/1,
+         set_sid/2,
          get_access/1,
          set_access/2,
          stream_mgmt_enabled/1
@@ -77,7 +79,7 @@ new(Vars) ->
                           %% not so clear what the usage of access,
                           %% refer to module acl.
                           access => c2s,
-                          sid => {now(), ej_tcp_stub:get_socket(Vars)},
+                          sid => undefined,
                           %% the stream id
                           stream_id => randoms:get_string()
                         },
