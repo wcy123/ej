@@ -7,7 +7,7 @@
 %%% Created : 16 Aug 2015 by Wang Chunye <>
 %%%-------------------------------------------------------------------
 -module(ej_c2s_SUITE).
-
+-include("sp_cmd.hrl").
 -compile(export_all).
 
 -include_lib("common_test/include/ct.hrl").
@@ -226,23 +226,24 @@ hello_xmpp_server_1(Config) ->
     Vars0 = ej_c2s:new(),
     true = is_map(Vars0),
     Vars00 = ej_c2s:add_bottom_module(dummy_sink,Vars0),
-    Vars1 = ej_c2s:ul({tcp, 1,  << "<?xml version='1.0'?>" >>}, dummy_sink, Vars00),
+    Vars1 = ej_c2s:ul(#sp_cmd{ args = {tcp, 1,  << "<?xml version='1.0'?>" >>}, label = <<"xml_ver_1_0">> },
+                      dummy_sink, Vars00),
     true = is_map(Vars1),
     Data = << "<stream:stream to='localhost' xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' version='1.0'>" >>,
-    Vars2 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink, Vars1),
+    Vars2 = ej_c2s:ul(#sp_cmd{ args = {tcp, 1,  Data}, label = <<"open stream">> }, dummy_sink, Vars1),
     true = is_map(Vars2),
     <<"localhost">> = ej_c2s_state:get_server(Vars2),
 
 
     Data2 = <<"<auth xmlns='urn:ietf:params:xml:ns:xmpp-sasl' mechanism='PLAIN' xmlns:ga='http://www.google.com/talk/protocol/auth' ga:client-uses-full-bind-result='true'>AHRlc3QxADEyMw==</auth>">>,
-    Vars3 = ej_c2s:ul({tcp, 1,  Data2}, dummy_sink, Vars2),
+    Vars3 = ej_c2s:ul(#sp_cmd{ args = {tcp,1, Data2}, label = <<"auth">> }, dummy_sink, Vars2),
     Output0 = dummy_sink:get_output(Vars3),
     {data, [Output1]} = Output0,
     {_,_} = binary:match(Output1, [<<"success">>]),
 
 
     Vars4 = ej_vars:set(output, <<"no_output">>, dummy_sink, Vars3),
-    Vars5 = ej_c2s:ul({tcp, 1,  Data}, dummy_sink, Vars4),
+    Vars5 = ej_c2s:ul(#sp_cmd{ args = { tcp,1,Data }, label = <<"reopen stream">> }, dummy_sink, Vars4),
     ej_c2s_state_wait_for_bind = ej_vars:get(ul_entity, ej_c2s_state, Vars5),
 
     Output2 = dummy_sink:get_output(Vars5),
@@ -255,14 +256,14 @@ hello_xmpp_server_1(Config) ->
 
     Data3 = << "<iq type=\"set\" id=\"1\"><bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\" /></iq>" >>,
     Vars6 = ej_vars:set(output, <<"no_output">>, dummy_sink, Vars5),
-    Vars7 = ej_c2s:ul({tcp, 1,  Data3}, dummy_sink, Vars6),
+    Vars7 = ej_c2s:ul(#sp_cmd{ args = {tcp, 1,  Data3}, label = <<"bind">> }, dummy_sink, Vars6),
     ej_c2s_state_wait_for_session = ej_vars:get(ul_entity, ej_c2s_state, Vars7),
 
     %% sessoin
     Data4 = << "<iq type=\"set\" id=\"2\"><session xmlns=\"urn:ietf:params:xml:ns:xmpp-session\" /></iq>" >>,
 
     Vars8 = ej_vars:set(output, <<"no_output">>, dummy_sink, Vars7),
-    Vars9 = ej_c2s:ul({tcp, 1,  Data4}, dummy_sink, Vars8),
+    Vars9 = ej_c2s:ul(#sp_cmd{ args = {tcp, 1,  Data4}, label = <<"open session">> }, dummy_sink, Vars8),
     ej_c2s_state_session_established = ej_vars:get(ul_entity, ej_c2s_state, Vars9),
 
 

@@ -8,9 +8,29 @@
 %%%-------------------------------------------------------------------
 -module(ej_xml_stream).
 -include("sp_cmd.hrl").
--define(DETAIL_LEVEL,99).
+
+%% type for the events reported to upper layer
+
+-record(xmlel,
+{
+    name = <<"">> :: binary(),
+    attrs    = [] :: [attr()],
+    children = [] :: [xmlel() | cdata()]
+}).
+
+-type(cdata() :: { xmlcdata, CData::binary()}).
+-type(attr() ::  { Name::binary(), Value::binary()}).
+-type(xmlel() :: #xmlel{}).
+-type event() :: xml_1_0 |
+                 {xml_stream_raw, binary()} |
+                 {xmlcdata, CDdata :: binary()} |
+                 {xml_stream_element, El:: #xmlel{} } |
+                 {xml_stream_end, Name :: binary()} |
+                 {xml_stream_start, Name :: binary(), Attr :: [attr()]} |
+                 {xml_stream_error, binary()}.
+-export_type([event/0]).
 %% API
-%% callbacks for upper layer
+%% c
 %% ej_c2s_main_loop callbacks
 -export([
          new/1,
@@ -35,23 +55,42 @@ new(Vars)            ->
                           size => 0,
                           maxsize => infinity
                         }, Vars).
-ul({data, Data}, Vars) ->
+-spec ul(Cmd::#sp_cmd{},Vars::ej_vars:ej_vars()) -> ej_vars:ej_vars().
+ul(#sp_cmd{ args = {tcp, _Socket, Data} }, Vars) ->
     %% adapter to original code.
-    et:trace_me(?DETAIL_LEVEL, ?MODULE, expal, parse , [{data, Data}]),
+    et:trace_me(99, ?MODULE, expal, parse , [{data, Data}]),
     {ok, NewVars, Events}  = parse(Data,Vars),
-    et:trace_me(?DETAIL_LEVEL, expal, ?MODULE, ok ,
+    et:trace_me(99, expal, ?MODULE, ok ,
                 [{xml, ej_vars:get(?MODULE,NewVars) },
                  {events, Events}]),
     lists:foldl(fun report_event/2, NewVars, Events).
 
 
+-spec report_event(E :: event(),
+                   Vars :: ej_vars:ej_vars()) ->
+                          ej_vars:ej_vars().
 report_event(E, Vars) when is_map(Vars) ->
-    ej_c2s:ul(E, ?MODULE, Vars).
+    ej_c2s:ul(#sp_cmd{ label = get_event_label(E), args = E },
+              ?MODULE, Vars).
 
-dl({send_xml, XMLs}, Vars) ->
+-spec dl(Cmd::#sp_cmd{},Vars::ej_vars:ej_vars()) -> ej_vars:ej_vars().
+dl(#sp_cmd{args = {send_xml, XMLs}}, Vars) ->
     IOData = lists:map(fun element_to_binary/1, XMLs),
-    ej_c2s:dl({data, IOData}, ?MODULE, Vars).
+    ej_c2s:dl(#sp_cmd{ args = {data, IOData}, label = iodata },
+              ?MODULE, Vars).
 
+-spec get_event_label(E :: event()) -> binary().
+get_event_label( {xml_stream_start, Name, _Attrs} ) ->
+    << "<" , Name/binary >> ;
+get_event_label( {xml_stream_end, Name } ) ->
+    Name;
+get_event_label( {xml_stream_element, #xmlel{name = Name } } ) ->
+    Name;
+get_event_label( {xmlcdata, _CData }) ->
+    <<"cdata">>.
+
+
+-spec reset_stream(ej_vars:ej_vars()) -> ej_vars:ej_vars().
 reset_stream(Vars) ->
     ej_vars:set(stack, [],?MODULE, Vars).
 
@@ -70,22 +109,8 @@ terminate(_Args, _Vars) ->
 -define(XML_ERROR, 3).
 -define(PARSE_COMMAND, 0).
 -define(PARSE_FINAL_COMMAND, 1).
--record(xmlel,
-{
-    name = <<"">> :: binary(),
-    attrs    = [] :: [attr()],
-    children = [] :: [xmlel() | cdata()]
-}).
 
--type(cdata() :: {xmlcdata, CData::binary()}).
--type(attr() :: {Name::binary(), Value::binary()}).
--type(xmlel() :: #xmlel{}).
--type xml_stream_el() :: {xml_stream_raw, binary()} |
-                         {xml_stream_cdata, binary()} |
-                         {xml_stream_element, xmlel()} |
-                         {xml_stream_end, binary()} |
-                         {xml_stream_start, binary(), [attr()]} |
-                         {xml_stream_error, binary()}.
+-spec element_to_binary(E :: event()) -> binary().
 element_to_binary(xml_1_0) ->
     << "<?xml version='1.0'?>" >>;
 element_to_binary({xml_stream_start, Name, Attrs}) ->

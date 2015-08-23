@@ -28,11 +28,13 @@
 %% @end
 %%--------------------------------------------------------------------
 
+-spec new(Vars :: ej_vars:ej_vars()) -> ej_vars:ej_vars().
 new(Vars) ->
     ej_vars:add_module(?MODULE, #{
 
                          }, Vars).
-ul({xml_stream_element, El}, Vars) ->
+-spec ul(Cmd::#sp_cmd{},Vars::ej_vars:ej_vars()) -> ej_vars:ej_vars().
+ul(#sp_cmd{ args = {xml_stream_element, El} } , Vars) ->
     #xmlel{name = Name, attrs = Attrs, children = Els} = El,
     NS = xml:get_attr_s(<<"xmlns">>, Attrs),
     case {NS , Name} of
@@ -80,13 +82,18 @@ go_on_auth_ok(Props, Vars) ->
     ejabberd_hooks:run(c2s_auth_result, ej_c2s_state:get_server(Vars),
                        [true, U, ej_c2s_state:get_server(Vars),
                         ej_tcp_stub:get_ip(Vars)]),
-    NewVars0 = ej_c2s:dl({send_xml,
-                          [
-                           #xmlel{name = <<"success">>,
-                                  attrs = [{<<"xmlns">>, ?NS_SASL}],
-                                  children = []}
-                          ]
-                         }, ?MODULE, Vars),
+    NewVars0 = ej_c2s:dl(
+                 #sp_cmd{
+                    args = {send_xml,
+                            [
+                             #xmlel{name = <<"success">>,
+                                    attrs = [{<<"xmlns">>, ?NS_SASL}],
+                                    children = []}
+                            ]
+                           },
+                    label = <<"success">>
+                   },
+                 ?MODULE, Vars),
     NewVars1 = ej_c2s_state:set_stream_id(new_id(),NewVars0),
     NewVars2 = ej_c2s_state_wait_for_stream:set_authenticated(true,NewVars1),
     NewVars3 = ej_c2s_state_wait_for_stream:set_auth_module(AuthModule,NewVars2),
@@ -105,14 +112,19 @@ go_on_auth_failed(Username, Error, Vars) ->
                 ejabberd_config:may_hide_data(jlib:ip_to_list(IP))]),
     ejabberd_hooks:run(c2s_auth_result, ej_c2s_state:get_server(Vars),
                        [false, Username, Server, IP]),
-    NewVars = ej_c2s:dl({
-                send_xml,
-                [#xmlel{name = <<"failure">>,
-                        attrs = [{<<"xmlns">>, ?NS_SASL}],
-                        children =
-                            [#xmlel{name = Error, attrs = [],
-                                    children = []}]}]
-              }, ?MODULE, Vars),
+    NewVars = ej_c2s:dl(
+                #sp_cmd{
+                   args = {
+                     send_xml,
+                     [#xmlel{name = <<"failure">>,
+                             attrs = [{<<"xmlns">>, ?NS_SASL}],
+                             children =
+                                 [#xmlel{name = Error, attrs = [],
+                                         children = []}]}]
+                    },
+                   label = <<"failure">>
+                  },
+                ?MODULE, Vars),
     NewVars.
 go_on_unknown_ns(El, Vars) ->
     NewVars = process_unauthenticated_stanza(El,Vars),
@@ -120,12 +132,12 @@ go_on_unknown_ns(El, Vars) ->
 
 process_unauthenticated_stanza(El,Vars) ->
     NewEl = case xml:get_tag_attr_s(<<"xml:lang">>, El) of
-              <<"">> ->
-                  case ej_c2s_state:get_lang(Vars) of
-                      <<"">> -> El;
-                      Lang -> xml:replace_tag_attr(<<"xml:lang">>, Lang, El)
-                  end;
-              _ -> El
+                <<"">> ->
+                    case ej_c2s_state:get_lang(Vars) of
+                        <<"">> -> El;
+                        Lang -> xml:replace_tag_attr(<<"xml:lang">>, Lang, El)
+                    end;
+                _ -> El
             end,
     Server = ej_c2s_state:get_server(Vars),
     IP = ej_tcp_stub:get_ip(Vars),
@@ -145,9 +157,19 @@ process_unauthenticated_stanza(El,Vars) ->
                                                               <<"">>),
                                                 jlib:iq_to_xml(ResIQ)),
                     XmlEl = jlib:remove_attr(<<"to">>, Res1),
-                    ej_c2s:dl({send_xml, [XmlEl]}, ?MODULE, Vars);
+                    ej_c2s:dl(
+                      #sp_cmd{
+                         args = {send_xml, [XmlEl]},
+                         label = <<"service_not_available">>
+                        },
+                      ?MODULE, Vars);
                 Otherwise ->
-                    ej_c2s:dl({send_xml, [Otherwise]}, ?MODULE, Vars)
+                    ej_c2s:dl(
+                      #sp_cmd{
+                         args = {send_xml, [Otherwise]},
+                         label = <<"other_error">>
+                        },
+                      ?MODULE, Vars)
             end;
         _ ->
             %% Drop any stanza, which isn't IQ stanza

@@ -8,6 +8,7 @@
 %%%-------------------------------------------------------------------
 -module(ej_c2s_state).
 -include("sp_cmd.hrl").
+-include("jlib.hrl").
 
 
 %% API
@@ -83,40 +84,54 @@ new(Vars) ->
                           stream_id => randoms:get_string()
                         },
                        NewVars1).
-
+-spec ul(Cmd::#sp_cmd{},Vars::ej_vars:ej_vars()) -> ej_vars:ej_vars().
 ul(Args, Vars) ->
     ej_c2s:ul(Args,?MODULE,Vars).
 
-dl({send_xml, _XMLs} = Cmd, Vars) ->
+-spec dl(Cmd::#sp_cmd{},Vars::ej_vars:ej_vars()) -> ej_vars:ej_vars().
+dl(#sp_cmd{args = {send_xml, _XMLs} } = Cmd, Vars) ->
     ej_c2s:dl(Cmd,?MODULE, Vars).
 
+-spec get_stream_id(Vars :: ej_vars:ej_vars()) ->  binary() | undefined.
 get_stream_id(Vars) ->
     ej_vars:get(stream_id,?MODULE, Vars).
+-spec set_stream_id(Value :: binary() | undefined, Vars :: ej_vars:ej_vars() ) -> ej_vars:ej_vars().
 set_stream_id(Value,Vars) ->
     ej_vars:set(stream_id, Value, ?MODULE, Vars).
 
+-spec get_server(Vars :: ej_vars:ej_vars()) ->  binary().
 get_server(Vars) ->
     ej_vars:get(server,?MODULE, Vars).
+-spec set_server(Value :: binary(), Vars :: ej_vars:ej_vars() ) -> ej_vars:ej_vars().
 set_server(Value,Vars) ->
     ej_vars:set(server, Value, ?MODULE, Vars).
 
+
+-spec get_user(Vars :: ej_vars:ej_vars()) ->  binary().
 get_user(Vars) ->
     ej_vars:get(user,?MODULE, Vars).
+-spec set_user(Value :: binary(), Vars :: ej_vars:ej_vars() ) -> ej_vars:ej_vars().
 set_user(Value,Vars) ->
     ej_vars:set(user, Value, ?MODULE, Vars).
 
+-spec get_lang(Vars :: ej_vars:ej_vars()) ->  binary().
 get_lang(Vars) ->
     ej_vars:get(lang,?MODULE, Vars).
+-spec set_lang(Value :: binary(), Vars :: ej_vars:ej_vars() ) -> ej_vars:ej_vars().
 set_lang(Value,Vars) ->
     ej_vars:set(lang, Value, ?MODULE, Vars).
 
+-spec get_resource(Vars :: ej_vars:ej_vars()) ->  binary().
 get_resource(Vars) ->
     ej_vars:get(resource,?MODULE, Vars).
+-spec set_resource(Value :: binary(), Vars :: ej_vars:ej_vars() ) -> ej_vars:ej_vars().
 set_resource(Value,Vars) ->
     ej_vars:set(resource, Value, ?MODULE, Vars).
 
+-spec get_jid(Vars :: ej_vars:ej_vars()) ->  #jid{} | undefined.
 get_jid(Vars) ->
     ej_vars:get(jid,?MODULE, Vars).
+-spec set_jid(Value :: #jid{} , Vars :: ej_vars:ej_vars() ) -> ej_vars:ej_vars().
 set_jid(Value,Vars) ->
     ej_vars:set(jid, Value, ?MODULE, Vars).
 
@@ -144,9 +159,11 @@ set_privacy_list(Value,Vars) ->
     ej_vars:set(privacy_list, Value, ?MODULE, Vars).
 
 %% todo
+-spec stream_mgmt_enabled(ej_vars:ej_vars()) -> boolean().
+stream_mgmt_enabled(#{}) ->
+    false;
 stream_mgmt_enabled(_Vars) ->
     true.
-
 
 change_state(State, Vars) ->
     %% OldState = ej_vars:get(ul_entity,?MODULE,Vars),

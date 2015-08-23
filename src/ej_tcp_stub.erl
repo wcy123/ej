@@ -35,10 +35,10 @@ new(Vars) ->
                         },
                        Vars).
 
-ul(#sp_cmd{cmd=tcp, args = {Socket, _} } = Cmd, Vars) ->
+ul(#sp_cmd{args = {tcp, Socket, _ } } = Cmd, Vars) ->
     NewVars = set_socket(Socket,Vars),
     ej_c2s:ul(Cmd, ?MODULE, NewVars).
-dl(#sp_cmd{cmd=tcp} = Cmd, Vars) ->
+dl(#sp_cmd{} = Cmd, Vars) ->
     ej_c2s:dl(Cmd, ?MODULE, Vars).
 
 set_socket(Socket, Vars) ->

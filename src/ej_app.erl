@@ -33,7 +33,6 @@ start(_StartType, _StartArgs) ->
     %% run some hooks, so it must be started after ej_sup.
     ejabberd_auth:start(),
     acl:start(),
-    ejabberd_commands:init(),
     ejabberd_sm:start_link(),
     {ok, Pid}.
 

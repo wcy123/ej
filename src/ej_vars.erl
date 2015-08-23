@@ -20,7 +20,11 @@
 -type ej_vars() :: #{ ej_module() => ej_module_vars() }.
 -type ej_module_vars() :: #{ atom() => term() }.
 
+
 %% @doc create module variable storage.
+%% initializate module variables for each module, by invoking M:new(Vars) respectively.
+%% M:new(Vars) is expected to return ej_vars:add_module(?MODULE, #{ modudle specific variables }, Vars}
+%%
 -spec new(Modules :: [ej_module()],
           Vars :: ej_vars()) -> ej_vars().
 new(Modules, Vars) ->
@@ -72,6 +76,7 @@ set(Key, Value, Module, Vars) ->
     maps:update(Module, M2, Vars).
 
 %%% internal functions
+-spec for_each_module( M::ej_module(), Vars::ej_module_vars()) -> any().
 for_each_module(M, Vars) ->
     OldV = maps:get(M,Vars,#{}),
     %% R17.5 does not support the syntax as below, replace with maps:put

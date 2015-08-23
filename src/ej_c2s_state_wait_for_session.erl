@@ -12,11 +12,13 @@
 -define(SETS, gb_sets).
 -define(DICT, dict).
 
+-spec new(Vars :: ej_vars:ej_vars()) -> ej_vars:ej_vars().
 new(Vars) ->
     ej_vars:add_module(?MODULE, #{
                          }, Vars).
 
-ul({xml_stream_element, El}, Vars) ->
+-spec ul(Cmd::#sp_cmd{},Vars::ej_vars:ej_vars()) -> ej_vars:ej_vars().
+ul(#sp_cmd{ args = {xml_stream_element, El} }, Vars) ->
     %% this one is not migrate yet.
     %% NewStateData = update_num_stanzas_in(StateData, El),
     IqQueryInfo = jlib:iq_query_info(El),
@@ -45,7 +47,12 @@ go_on_allow(El,Vars) ->
     Socket = ej_tcp_stub:get_socket(Vars),
     ?INFO_MSG("(~w) Opened session for ~s", [Socket, jlib:jid_to_string(JID)]),
     Res = jlib:make_result_iq_reply(El#xmlel{children = []}),
-    NewVars0 = ej_c2s:dl({send_xml, [Res]}, ?MODULE, Vars),
+    NewVars0 = ej_c2s:dl(
+                 #sp_cmd{
+                    args = {send_xml, [Res]},
+                    label = <<"open session">>
+                   },
+                 ?MODULE, Vars),
     %% this feature could be implemented in a more modular way.
     %% CSI etc
     %% send_stanza(Res, Vars),
@@ -81,7 +88,12 @@ go_on_not_allow(El,Vars) ->
     ejabberd_hooks:run(forbidden_session_hook, Server, [JID]),
     ?INFO_MSG("(~w) Forbidden session for ~s", [Socket, jlib:jid_to_string(JID)]),
     Err = jlib:make_error_reply(El, ?ERR_NOT_ALLOWED),
-    NewVars0 = ej_c2s:dl({send_xml, [Err]}, ?MODULE, Vars),
+    NewVars0 = ej_c2s:dl(
+                 #sp_cmd{
+                    args = {send_xml, [Err]},
+                    label = <<"session denied">>
+                   },
+                 ?MODULE, Vars),
     %% this has no effect, stay in the same state.
     ej_c2s_state:change_state(ej_c2s_state_wait_for_session, NewVars0).
 

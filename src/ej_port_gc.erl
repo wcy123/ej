@@ -28,6 +28,8 @@ loop() ->
             loop();
         stop ->
             ok; %% exit the loop
+        {'EXIT', _From, shutdown } ->
+            ok; %% ok shut me down by supervisor
         {'EXIT', From, Reason} ->
             erlang:error({what,{From,Reason, self()}});
         E ->

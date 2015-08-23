@@ -1,5 +1,4 @@
 
 -record(sp_cmd,
-        { cmd :: atom(),
-          label :: atom(),
+        { label :: atom() | binary(),
           args :: term() }).

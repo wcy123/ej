@@ -9,9 +9,10 @@
          ul/2
         ]).
 
+-spec new(Vars :: ej_vars:ej_vars()) -> ej_vars:ej_vars().
 new(Vars) ->
     ej_vars:add_module(?MODULE, #{
                          }, Vars).
 
-ul({xml_stream_element, El}, Vars) ->
+ul(#sp_cmd{ args = {xml_stream_element, El} }, Vars) ->
     Vars.

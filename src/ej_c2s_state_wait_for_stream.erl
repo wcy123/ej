@@ -40,6 +40,7 @@
 %% @end
 %%--------------------------------------------------------------------
 
+-spec new(Vars :: ej_vars:ej_vars()) -> ej_vars:ej_vars().
 new(Vars) ->
     ej_vars:add_module(?MODULE, #{
                           authenticated => false,
@@ -47,7 +48,8 @@ new(Vars) ->
                           auth_module => undefined,
                           output => undefined
                          }, Vars).
-ul({xml_stream_start, _Name, Attrs}, Vars) ->
+-spec ul(Cmd::#sp_cmd{},Vars::ej_vars:ej_vars()) -> ej_vars:ej_vars().
+ul(#sp_cmd{args = {xml_stream_start, _Name, Attrs} }, Vars) ->
     DefaultLang = ?MYLANG,
     case xml:get_attr_s(<<"xmlns:stream">>, Attrs) of
         ?NS_STREAM ->
@@ -81,12 +83,12 @@ go_on_2(Lang, Server, Attrs, Vars) ->
     Version = xml:get_attr_s(<<"version">>, Attrs),
     case Version of
         <<"1.0">> ->
-            go_on_3(Lang,Server,Attrs,Vars);
+            go_on_3(Lang,Server,Vars);
         _ ->
             not_version_1_0_err(Vars)
     end.
 
-go_on_3(Lang,Server,Attrs,Vars) ->
+go_on_3(Lang,Server,Vars) ->
     case get_authenticated(Vars) of
         false ->
             go_on_not_authenticated(Server,Vars);
@@ -129,22 +131,25 @@ go_on_not_authenticated(Server, Vars) ->
     NewVars0 = set_sasl_state(SASLState, Vars),
     NewVars1 = ej_c2s_state:set_server(Server, NewVars0),
     NewVars2 = ej_c2s:dl(
-                 {send_xml,
-                 [xml_1_0,
-                  { xml_stream_start,
-                    %% name =
-                    <<"stream:stream">>,
-                    %% attrs =
-                    [{ <<"versiaon">>, Version},
-                     {<<"xml:lang">>, DefaultLang},
-                     {<<"xmlns">>, <<"jabber:client">>},
-                     {<<"xmlns:stream">>, <<"http://etherx.jabber.org/streams">>},
-                     {<<"id">>, ej_c2s_state:get_stream_id(Vars)},
-                     {<<"from">>, Server} ]},
-                  #xmlel{ name = <<"stream:features">>,
-                          attrs = [],
-                          children = StreamFeatures }
-                 ]},
+                 #sp_cmd{ args =
+                              {send_xml,
+                               [xml_1_0,
+                                { xml_stream_start,
+                                  %% name =
+                                  <<"stream:stream">>,
+                                  %% attrs =
+                                  [{ <<"versiaon">>, Version},
+                                   {<<"xml:lang">>, DefaultLang},
+                                   {<<"xmlns">>, <<"jabber:client">>},
+                                   {<<"xmlns:stream">>, <<"http://etherx.jabber.org/streams">>},
+                                   {<<"id">>, ej_c2s_state:get_stream_id(Vars)},
+                                   {<<"from">>, Server} ]},
+                                #xmlel{ name = <<"stream:features">>,
+                                        attrs = [],
+                                        children = StreamFeatures }
+                               ]},
+                          label = <<"start_stream">>
+                        },
                  ?MODULE,
                  NewVars1),
     ej_c2s_state:change_state(ej_c2s_state_wait_for_feature_request,NewVars2).
@@ -188,24 +193,32 @@ go_on_empty_resource(Server,Lang,Vars) ->
     StreamFeatures = ejabberd_hooks:run_fold(c2s_stream_features,
                                              Server, StreamFeatures1, [Server]),
     NewVars0 = ej_c2s:dl(
-                {
-                  send_xml,
-                  [ #xmlel{name = <<"stream:features">>,
-                           attrs = [],
-                           children = StreamFeatures} ]
-                }, ?MODULE, Vars),
+                 #sp_cmd{
+                    args = {
+                      send_xml,
+                      [ #xmlel{name = <<"stream:features">>,
+                               attrs = [],
+                               children = StreamFeatures} ]
+                     },
+                    label = <<"stream:features">>
+                   },
+                 ?MODULE, Vars),
     NewVars1 = ej_c2s_state:set_lang(Lang, NewVars0),
     NewVars2 = ej_c2s_state:set_server(Server, NewVars1),
     ej_c2s_state:change_state(ej_c2s_state_wait_for_bind, NewVars2).
 
 go_on_nonempty_resource(Server,Lang,Vars) ->
     NewVars0 = ej_c2s:dl(
-                {
-                  send_xml,
-                  [#xmlel{name = <<"stream:features">>,
-                          attrs = [],
-                          children = []}]
-                }, ?MODULE, Vars),
+                 #sp_cmd{
+                    args = {
+                      send_xml,
+                      [#xmlel{name = <<"stream:features">>,
+                              attrs = [],
+                              children = []}]
+                     },
+                    label = <<"stream:features">>
+                   },
+                 ?MODULE, Vars),
     NewVars1 = ej_c2s_state:set_lang(Lang, NewVars0),
     NewVars2 = ej_c2s_state:set_server(Server, NewVars1),
     ej_c2s_state:change_state(ej_c2s_state_wait_for_session, NewVars2).
@@ -240,43 +253,51 @@ get_lang(Attrs) ->
 
 
 invalid_ns_err(Lang, Version, Server, Vars) ->
-    ej_c2s:dl({send_xml,
-               [xml_1_0,
-                #xmlel{
-                   name  = <<"stream:stream">>,
-                   attrs = [{ <<"version">>, Version},
-                            {<<"xml:lang">>, Lang},
-                            {<<"xmlns">>, <<"jabber:client">>},
-                            {<<"xmlns:stream">>, <<"http://etherx.jabber.org/streams">>},
-                            {<<"id">>, ej_c2s_state:get_stream_id(Vars)},
-                            {<<"from">>, Server} ],
-                   children = [
-                               ?INVALID_NS_ERR
-                              ]
-                  }
-               ]},
-              ?MODULE,
-              Vars).
+    ej_c2s:dl(
+      #sp_cmd{
+         args = {send_xml,
+                 [xml_1_0,
+                  #xmlel{
+                     name  = <<"stream:stream">>,
+                     attrs = [{ <<"version">>, Version},
+                              {<<"xml:lang">>, Lang},
+                              {<<"xmlns">>, <<"jabber:client">>},
+                              {<<"xmlns:stream">>, <<"http://etherx.jabber.org/streams">>},
+                              {<<"id">>, ej_c2s_state:get_stream_id(Vars)},
+                              {<<"from">>, Server} ],
+                     children = [
+                                 ?INVALID_NS_ERR
+                                ]
+                    }
+                 ]},
+         label = <<"invalid_name_space">>
+        },
+      ?MODULE,
+      Vars).
 
 host_unknown_err(Vars) ->
     DefaultLang = ?MYLANG,
-    ej_c2s:dl({send_xml,
-               [xml_1_0,
-                #xmlel{
-                   name  = <<"stream:stream">>,
-                   attrs = [{ <<"version">>, <<"">>},
-                            {<<"xml:lang">>, DefaultLang},
-                            {<<"xmlns">>, <<"jabber:client">>},
-                            {<<"xmlns:stream">>, <<"http://etherx.jabber.org/streams">>},
-                            {<<"id">>, ej_c2s_state:get_stream_id(Vars)},
-                            {<<"from">>, ?MYNAME } ],
-                   children = [
-                               ?HOST_UNKNOWN_ERR
-                              ]
-                  }
-               ]},
-              ?MODULE,
-              Vars).
+    ej_c2s:dl(
+      #sp_cmd{
+         args = {send_xml,
+                 [xml_1_0,
+                  #xmlel{
+                     name  = <<"stream:stream">>,
+                     attrs = [{ <<"version">>, <<"">>},
+                              {<<"xml:lang">>, DefaultLang},
+                              {<<"xmlns">>, <<"jabber:client">>},
+                              {<<"xmlns:stream">>, <<"http://etherx.jabber.org/streams">>},
+                              {<<"id">>, ej_c2s_state:get_stream_id(Vars)},
+                              {<<"from">>, ?MYNAME } ],
+                     children = [
+                                 ?HOST_UNKNOWN_ERR
+                                ]
+                    }
+                 ]},
+         label = <<"unknown_host">>
+        },
+      ?MODULE,
+      Vars).
 
 black_list_err(IsBlacklistedIP, Lang, Vars) ->
     DefaultLang = ?MYLANG,
@@ -286,25 +307,32 @@ black_list_err(IsBlacklistedIP, Lang, Vars) ->
               [jlib:ip_to_list(IP), LogReason]),
     From = ?MYNAME,
     Child = ?POLICY_VIOLATION_ERR(Lang, ReasonT),
-    ej_c2s:dl({send_xml,
-               [xml_1_0,
-                #xmlel{
-                   name  = <<"stream:stream">>,
-                   attrs = [{ <<"version">>, <<"">>},
-                            {<<"xml:lang">>, DefaultLang},
-                            {<<"xmlns">>, <<"jabber:client">>},
-                            {<<"xmlns:stream">>, <<"http://etherx.jabber.org/streams">>},
-                            {<<"id">>, ej_c2s_state:get_stream_id(Vars)},
-                            {<<"from">>, From} ],
-                   children = [Child]
-                  }
-               ]}, ?MODULE, Vars).
+    ej_c2s:dl(
+      #sp_cmd{
+         args = {send_xml,
+                 [xml_1_0,
+                  #xmlel{
+                     name  = <<"stream:stream">>,
+                     attrs = [{ <<"version">>, <<"">>},
+                              {<<"xml:lang">>, DefaultLang},
+                              {<<"xmlns">>, <<"jabber:client">>},
+                              {<<"xmlns:stream">>, <<"http://etherx.jabber.org/streams">>},
+                              {<<"id">>, ej_c2s_state:get_stream_id(Vars)},
+                              {<<"from">>, From} ],
+                     children = [Child]
+                    }
+                 ]},
+         label = <<"in_black_list">>
+        },
+      ?MODULE, Vars).
 
 not_version_1_0_err(Vars) ->
     DefaultLang = ?MYLANG,
     From = ?MYNAME,
     Child = ?POLICY_VIOLATION_ERR(DefaultLang, <<"wrong version">>),
-    ej_c2s:dl({send_xml,
+    ej_c2s:dl(
+      #sp_cmd{
+         args = {send_xml,
                [xml_1_0,
                 #xmlel{
                    name  = <<"stream:stream">>,
@@ -316,7 +344,10 @@ not_version_1_0_err(Vars) ->
                             {<<"from">>, From} ],
                    children = [Child]
                   }
-               ]}, ?MODULE, Vars).
+               ]},
+         label = <<"not_version_1.0">>
+        },
+      ?MODULE, Vars).
 
     %% if not StateData#state.tls_enabled and
     %%    StateData#state.tls_required ->
